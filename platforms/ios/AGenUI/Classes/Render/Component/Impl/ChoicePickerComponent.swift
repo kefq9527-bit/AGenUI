@@ -390,8 +390,7 @@ class ChoicePickerComponent: Component {
         var textSize: CGFloat = 16
         var choiceGap: CGFloat = 4
 
-        if let config = ComponentStyleConfigManager.shared.getConfig(for: "ChoicePicker"),
-           let pickerConfig = config["ChoicePicker"] as? [String: Any] {
+        if let pickerConfig = ComponentStyleConfigManager.shared.getConfig(for: "ChoicePicker") {
             if let size = pickerConfig["checkbox-size"] as? String,
                let value = ComponentStyleConfigManager.parseSize(size) {
                 checkboxSize = value
@@ -717,11 +716,7 @@ class ChoicePickerComponent: Component {
 
     /// Load local style configuration
     private func loadLocalStyleConfig() {
-        guard let config = ComponentStyleConfigManager.shared.getConfig(for: componentType) else {
-            return
-        }
-
-        guard let pickerConfig = config["ChoicePicker"] as? [String: Any] else {
+        guard let pickerConfig = ComponentStyleConfigManager.shared.getConfig(for: componentType) else {
             return
         }
 
