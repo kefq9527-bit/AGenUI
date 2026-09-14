@@ -763,7 +763,7 @@ public enum MeasureMode: Int {
     ///
     /// Reads config for current component type from localConfig.json
     /// - Returns: Config dictionary, or nil if no config for current component type
-    internal func getLocalStyleConfig() -> [String: Any]? {
+    public func getLocalStyleConfig() -> [String: Any]? {
         return ComponentStyleConfigManager.shared.getConfig(for: componentType)
     }
 
