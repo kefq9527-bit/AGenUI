@@ -18,7 +18,15 @@ class CardComponent: Component {
     
     init(componentId: String, properties: [String: Any]) {
         super.init(componentId: componentId, componentType: "Card", properties: properties)
-        
+
+        // Design defaults (used when the DSL carries no styles).
+        // CSS properties from the DSL still override these via CSSPropertyApplier.
+        backgroundColor = .white
+        layer.borderWidth = 0.5                       // 1px @2x
+        layer.borderColor = UIColor(red: 0xE5/255.0, green: 0xE7/255.0, blue: 0xEB/255.0, alpha: 1.0).cgColor
+        layer.cornerRadius = 10                       // 20px / 2
+        clipsToBounds = true
+
         // Apply initial properties
         updateProperties(DiffValue.from(properties))
     }

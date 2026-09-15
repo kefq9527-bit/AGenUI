@@ -492,8 +492,9 @@ class TextComponent: Component {
         let label = TextDecorationLabel()
         label.numberOfLines = 0
         label.lineBreakMode = .byWordWrapping
-        label.font = UIFont.systemFont(ofSize: 16)
-        label.textColor = .black
+        // Design defaults: 28px -> 14pt, color #1f2937 (used when the DSL carries no styles)
+        label.font = UIFont.systemFont(ofSize: 14)
+        label.textColor = UIColor(red: 0x1F/255.0, green: 0x29/255.0, blue: 0x37/255.0, alpha: 1.0)
         
         // Add subview with AutoLayout constraints to fill parent.
         // Constraints are stored as members so `applyTextPadding` can mutate
@@ -573,10 +574,10 @@ class TextComponent: Component {
     /// Parsed text style properties (intermediate representation)
     /// Shared by applyStyles and measure to ensure consistent parsing
     private struct ParsedTextStyles {
-        var fontSize: CGFloat = 32.0 * Component.BS_POINT_SCALE  // 32 a2ui → 16pt
+        var fontSize: CGFloat = 28.0 * Component.BS_POINT_SCALE  // 28 a2ui -> 14pt (design default)
         var fontWeight: UIFont.Weight = .regular
         var fontFamily: String = "system"
-        var color: UIColor = .black
+        var color: UIColor = UIColor(red: 0x1F/255.0, green: 0x29/255.0, blue: 0x37/255.0, alpha: 1.0)  // #1f2937
         var textAlign: NSTextAlignment = .left
         var lineHeight: LineHeightType?              // nil = native line spacing
         var lineClamp: Int = 0

@@ -37,8 +37,6 @@ class CheckBoxComponent: Component {
     private var selectedBorderColor: UIColor = UIColor(red: 0x2E/255.0, green: 0x82/255.0, blue: 0xFF/255.0, alpha: 1.0)
     private var unselectedBackgroundColor: UIColor = .clear
     private var unselectedBorderColor: UIColor = UIColor.black.withAlphaComponent(0.1)
-    private var disabledBackgroundColor: UIColor = UIColor(red: 0xEB/255.0, green: 0xEB/255.0, blue: 0xEB/255.0, alpha: 1.0)
-    private var disabledBorderColor: UIColor = UIColor.black.withAlphaComponent(0.1)
     private var textMargin: CGFloat = 8
     private var textColor: UIColor = .black
     private var textColorDisabled: UIColor = UIColor.black.withAlphaComponent(0.4)
@@ -275,17 +273,6 @@ class CheckBoxComponent: Component {
             self.unselectedBorderColor = value
         }
         
-        // Parse disabled state colors
-        if let color = config["checkbox-background-color-disabled"] as? String,
-           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
-            self.disabledBackgroundColor = value
-        }
-        
-        if let color = config["checkbox-border-color-disabled"] as? String,
-           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
-            self.disabledBorderColor = value
-        }
-        
         // Parse text styles
         if let margin = config["text-margin"] as? String,
            let value = ComponentStyleConfigManager.parseSize(margin) {
@@ -323,8 +310,6 @@ class CheckBoxComponent: Component {
         button.selectedBorderColor = selectedBorderColor
         button.unselectedBackgroundColor = unselectedBackgroundColor
         button.unselectedBorderColor = unselectedBorderColor
-        button.disabledBackgroundColor = disabledBackgroundColor
-        button.disabledBorderColor = disabledBorderColor
         button.textMargin = textMargin
         button.textColor = textColor
         button.textColorDisabled = textColorDisabled

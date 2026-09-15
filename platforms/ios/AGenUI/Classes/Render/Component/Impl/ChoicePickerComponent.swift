@@ -254,11 +254,13 @@ class ChoicePickerComponent: Component {
 
     private var optionsContainer: UIView?
     private var errorLabel: UILabel?
+    private var titleLabel: UILabel?
     private var isUpdatingFromNative = false
 
     private var variant: String = "mutuallyExclusive" // Default single selection
     private var displayStyle: String = "checkbox" // Default checkbox style
     private var filterable: Bool = false           // Default not filterable
+    private var isDisabled: Bool = false           // Default enabled; "disable": true blocks all option interaction
     private var options: [[String: Any]] = []
     private var orientation: String = "vertical" // Default vertical layout
 
@@ -269,6 +271,14 @@ class ChoicePickerComponent: Component {
     // Option buttons for checkbox display style
     private var optionButtons: [CheckBoxButton] = []
     private var selectedRadioIndex: Int?
+
+    /// 最近一次已知选中值（单选 String / 多选 [String]）
+    ///
+    /// recreateOptions() 在每次 updateProperties 都重建全部选项按钮（isSelected 归零），
+    /// 而不含 "value" 的后续刷新 diff（updateDataModel 触发的组件刷新 pass、
+    /// styles-only 更新等）不会重放选中 → 回显选中态丢失。记录定义/diff/点击
+    /// 三来源的最近选中值，重建后重放使选中态跨重建存活。
+    private var lastSelectedValue: Any?
 
     // Option buttons for chips display style
     private var chipButtons: [ChipButton] = []
@@ -291,12 +301,33 @@ class ChoicePickerComponent: Component {
     private var textSize: CGFloat = 16
     private var choiceGap: CGFloat = 4  // Gap between options
 
+    // Row style (option item container)
+    private var itemBackgroundColor: UIColor = .clear
+    private var itemCornerRadius: CGFloat = 0
+    private var itemPaddingHorizontal: CGFloat = 0
+    private var itemPaddingVertical: CGFloat = 0
+
+    // Radio style (mutuallyExclusive variant)
+    private var radioSize: CGFloat = 16
+    private var radioBorderWidth: CGFloat = 1.5
+    private var radioBorderColor: UIColor = UIColor(red: 0xC5/255.0, green: 0xC5/255.0, blue: 0xC5/255.0, alpha: 1.0)
+    private var radioBorderColorSelected: UIColor = UIColor(red: 0x24/255.0, green: 0x96/255.0, blue: 0xFF/255.0, alpha: 1.0)
+    private var radioDotColor: UIColor = UIColor(red: 0x24/255.0, green: 0x96/255.0, blue: 0xFF/255.0, alpha: 1.0)
+
+    // Extra state colors
+    private var textColorDisabled: UIColor = UIColor.black.withAlphaComponent(0.4)
+    private var checkColor: UIColor = .white
+
     // Heights used by layoutSubviews when search/no-results are visible
     private let searchInputHeight: CGFloat = 44
     private let searchInputMargin: CGFloat = 8
     private let noResultsLabelHeight: CGFloat = 24
     private let noResultsLabelMargin: CGFloat = 8
     private let chipHeight: CGFloat = 36
+
+    // Title label (DSL "label") typography, shared by measure() and layoutSubviews()
+    private static let labelFontSize: CGFloat = 16
+    private static let labelBottomMargin: CGFloat = 8
 
     // MARK: - Initialization
 
@@ -305,6 +336,15 @@ class ChoicePickerComponent: Component {
 
         // Load style configuration
         loadLocalStyleConfig()
+
+        // Create title label (DSL "label"), hidden until a non-empty label arrives.
+        let titleLabel = UILabel()
+        titleLabel.font = UIFont.systemFont(ofSize: Self.labelFontSize, weight: .medium)
+        titleLabel.textColor = .black
+        titleLabel.numberOfLines = 0
+        titleLabel.isHidden = true
+        self.titleLabel = titleLabel
+        addSubview(titleLabel)
 
         // Pre-create search input view (kept hidden until filterable=true).
         // Pre-creation avoids reordering subviews when filterable toggles at runtime.
@@ -389,6 +429,9 @@ class ChoicePickerComponent: Component {
         var textMargin: CGFloat = 8
         var textSize: CGFloat = 16
         var choiceGap: CGFloat = 4
+        var itemPaddingHorizontal: CGFloat = 0
+        var itemPaddingVertical: CGFloat = 0
+        var radioSize: CGFloat = 16
 
         if let pickerConfig = ComponentStyleConfigManager.shared.getConfig(for: "ChoicePicker") {
             if let size = pickerConfig["checkbox-size"] as? String,
@@ -407,11 +450,24 @@ class ChoicePickerComponent: Component {
                let value = ComponentStyleConfigManager.parseSize(gap) {
                 choiceGap = value
             }
+            if let padding = pickerConfig["item-padding-horizontal"] as? String,
+               let value = ComponentStyleConfigManager.parseSize(padding) {
+                itemPaddingHorizontal = value
+            }
+            if let padding = pickerConfig["item-padding-vertical"] as? String,
+               let value = ComponentStyleConfigManager.parseSize(padding) {
+                itemPaddingVertical = value
+            }
+            if let size = pickerConfig["radio-size"] as? String,
+               let value = ComponentStyleConfigManager.parseSize(size) {
+                radioSize = value
+            }
         }
 
         // 4. Measure each option
         let constraintWidth: CGFloat = (widthMode == .undefined) ? .greatestFiniteMagnitude : CGFloat(maxWidth)
-        let checkboxH = checkboxSize  // iOS: no extra margin like Harmony's checkboxMar
+        let exclusive = ((json["variant"] as? String) ?? "mutuallyExclusive") == "mutuallyExclusive"
+        let indicatorH = exclusive ? radioSize : checkboxSize
         let font = UIFont.systemFont(ofSize: textSize, weight: .regular)
 
         var totalHeight: CGFloat = 0
@@ -439,16 +495,17 @@ class ChoicePickerComponent: Component {
         } else {
             var firstItem = true
             for text in optionLabels {
-                var contentH = checkboxH
+                var contentH = indicatorH
                 if !text.isEmpty {
                     let attributedString = NSAttributedString(string: text, attributes: [.font: font])
-                    let textAvailWidth = max(1.0, constraintWidth - checkboxSize - textMargin)
+                    let textAvailWidth = max(1.0, constraintWidth - itemPaddingHorizontal * 2 - indicatorH - textMargin)
                     let textBounds = attributedString.boundingRect(
                         with: CGSize(width: textAvailWidth, height: .greatestFiniteMagnitude),
                         options: [.usesLineFragmentOrigin, .usesFontLeading],
                         context: nil)
-                    contentH = max(checkboxH, ceil(textBounds.size.height))
+                    contentH = max(indicatorH, ceil(textBounds.size.height))
                 }
+                contentH += itemPaddingVertical * 2
 
                 if horizontal {
                     totalHeight = max(totalHeight, contentH)
@@ -463,6 +520,26 @@ class ChoicePickerComponent: Component {
         // Search input adds height when filterable is on (margin top + height + margin bottom)
         if filterable {
             totalHeight += 8 + 44 + 8
+        }
+
+        // Title label (DSL "label") sits above the options; mirror layoutSubviews spacing.
+        var labelText = ""
+        if let s = json["label"] as? String {
+            labelText = s
+        } else if let d = json["label"] as? [String: Any], let ls = d["literalString"] as? String {
+            labelText = ls
+        }
+        if !labelText.isEmpty {
+            let labelFont = UIFont.systemFont(ofSize: Self.labelFontSize, weight: .medium)
+            let labelAvailWidth = (constraintWidth == .greatestFiniteMagnitude)
+                ? constraintWidth
+                : max(1.0, constraintWidth)
+            let labelBounds = (labelText as NSString).boundingRect(
+                with: CGSize(width: labelAvailWidth, height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: [.font: labelFont],
+                context: nil)
+            totalHeight += ceil(labelBounds.size.height) + Self.labelBottomMargin
         }
 
         var measuredWidth: CGFloat = constraintWidth
@@ -490,6 +567,14 @@ class ChoicePickerComponent: Component {
 
         let boundsWidth = bounds.width
         var currentY: CGFloat = 0
+
+        // 0. Title label (DSL "label") at the very top; mirrors measure() spacing.
+        if let label = titleLabel, !label.isHidden {
+            let labelSize = label.sizeThatFits(CGSize(width: boundsWidth, height: .greatestFiniteMagnitude))
+            let labelHeight = ceil(labelSize.height)
+            label.frame = CGRect(x: 0, y: currentY, width: boundsWidth, height: labelHeight)
+            currentY += labelHeight + Self.labelBottomMargin
+        }
 
         // 1. Search input bar at the top
         if let searchView = searchInputView, !searchView.isHidden {
@@ -611,7 +696,24 @@ class ChoicePickerComponent: Component {
         return currentY + rowHeight + chipMargin
     }
 
+    override var frame: CGRect {
+        get { super.frame }
+        set {
+            let old = super.frame
+            super.frame = newValue
+            if abs(old.minX - newValue.minX) > 0.5 || abs(old.minY - newValue.minY) > 0.5
+                || abs(old.width - newValue.width) > 0.5 || abs(old.height - newValue.height) > 0.5 {
+                FlashLog.log("PCK frame \(NSCoder.string(for: old)) -> \(NSCoder.string(for: newValue))")
+            }
+        }
+    }
+
     override func updateProperties(_ diff: [String: DiffValue]) {
+        var styleDesc = ""
+        if case .value(let stylesValue) = diff["styles"], let styles = stylesValue as? [String: Any] {
+            styleDesc = " styles[x=\(styles["x"] ?? "-"),y=\(styles["y"] ?? "-"),w=\(styles["width"] ?? "-"),h=\(styles["height"] ?? "-")]"
+        }
+        FlashLog.log("PCK updateProperties keys=\(Array(diff.keys).sorted().joined(separator: ","))\(styleDesc)")
         super.updateProperties(diff)
 
         // Update variant
@@ -631,6 +733,23 @@ class ChoicePickerComponent: Component {
             filterable = filterableValue
         } else if case .deleted = diff["filterable"] {
             filterable = false
+        }
+
+        // Handle disable property (mirrors ButtonComponent): blocks option interaction
+        if case .value(let v) = diff["disable"], let disable = v as? Bool {
+            self.isDisabled = disable
+        } else if case .deleted = diff["disable"] {
+            self.isDisabled = false
+        }
+
+        // Handle label property: render as a title above the options
+        if case .value(let v) = diff["label"] {
+            let text = extractTextValue(v)
+            titleLabel?.text = text
+            titleLabel?.isHidden = text.isEmpty
+        } else if case .deleted = diff["label"] {
+            titleLabel?.text = ""
+            titleLabel?.isHidden = true
         }
 
         // Update options
@@ -704,12 +823,31 @@ class ChoicePickerComponent: Component {
             } else {
                 optionButtons.forEach { button in
                     button.isEnabled = isEnabled
-                    button.alpha = alpha
+                    button.alpha = 1.0
                 }
             }
         }
 
+        // Apply disabled state last so "disable" wins over checks-driven enablement
+        applyDisabledState()
+
         setNeedsLayout()
+    }
+
+    /// Disable all option buttons and the filter search input when "disable" is true.
+    /// CheckBoxButton/ChipButton render their built-in gray disabled appearance via isEnabled.
+    private func applyDisabledState() {
+        guard isDisabled else {
+            return
+        }
+        optionButtons.forEach { button in
+            button.isEnabled = false
+        }
+        chipButtons.forEach { button in
+            button.isEnabled = false
+        }
+        searchInputView?.isUserInteractionEnabled = false
+        Logger.shared.debug("ChoicePickerComponent: disabled, componentId: \(componentId)")
     }
 
     // MARK: - Configuration Methods
@@ -781,12 +919,71 @@ class ChoicePickerComponent: Component {
            let value = ComponentStyleConfigManager.parseSize(gap) {
             self.choiceGap = value
         }
+
+        // Parse row (item) styles
+        if let color = pickerConfig["item-background-color"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.itemBackgroundColor = value
+        }
+
+        if let radius = pickerConfig["item-corner-radius"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(radius) {
+            self.itemCornerRadius = value
+        }
+
+        if let padding = pickerConfig["item-padding-horizontal"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(padding) {
+            self.itemPaddingHorizontal = value
+        }
+
+        if let padding = pickerConfig["item-padding-vertical"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(padding) {
+            self.itemPaddingVertical = value
+        }
+
+        // Parse radio styles (mutuallyExclusive variant)
+        if let size = pickerConfig["radio-size"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(size) {
+            self.radioSize = value
+        }
+
+        if let width = pickerConfig["radio-border-width"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(width) {
+            self.radioBorderWidth = value
+        }
+
+        if let color = pickerConfig["radio-border-color"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.radioBorderColor = value
+        }
+
+        if let color = pickerConfig["radio-border-color-selected"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.radioBorderColorSelected = value
+        }
+
+        if let color = pickerConfig["radio-dot-color"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.radioDotColor = value
+        }
+
+        // Parse extra state colors
+        if let color = pickerConfig["text-color-disabled"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.textColorDisabled = value
+        }
+
+        if let color = pickerConfig["check-color"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.checkColor = value
+        }
     }
 
     // MARK: - Private Methods - UI Creation
 
     /// Recreate options view
     private func recreateOptions() {
+        FlashLog.log("PCK recreateOptions begin bounds=\(NSCoder.string(for: bounds))")
         // Clear existing button references
         optionButtons.removeAll()
         chipButtons.removeAll()
@@ -802,6 +999,13 @@ class ChoicePickerComponent: Component {
             createChips(in: optionsContainer)
         } else {
             createOptions(in: optionsContainer)
+        }
+
+        // Replay last known selection: recreated buttons start unselected and the
+        // current updateProperties diff may not carry "value" (refresh pass), so
+        // without replay the selection state would be silently lost.
+        if let lastSelectedValue = lastSelectedValue {
+            updateSelectedValue(lastSelectedValue)
         }
 
         setNeedsLayout()
@@ -822,8 +1026,10 @@ class ChoicePickerComponent: Component {
             button.tag = index
 
             // Apply configuration to CheckBoxButton
-            button.checkboxSize = checkboxSize
-            button.checkboxBorderWidth = checkboxBorderWidth
+            let exclusive = variant == "mutuallyExclusive"
+            button.isExclusive = exclusive
+            button.checkboxSize = exclusive ? radioSize : checkboxSize
+            button.checkboxBorderWidth = exclusive ? radioBorderWidth : checkboxBorderWidth
             button.checkboxBorderRadius = checkboxBorderRadius
             button.selectedBackgroundColor = selectedBackgroundColor
             button.selectedBorderColor = selectedBorderColor
@@ -832,6 +1038,15 @@ class ChoicePickerComponent: Component {
             button.textMargin = textMargin
             button.textColor = textColor
             button.textSize = textSize
+            button.itemBackgroundColor = itemBackgroundColor
+            button.itemCornerRadius = itemCornerRadius
+            button.itemPaddingHorizontal = itemPaddingHorizontal
+            button.itemPaddingVertical = itemPaddingVertical
+            button.radioBorderColor = radioBorderColor
+            button.radioBorderColorSelected = radioBorderColorSelected
+            button.radioDotColor = radioDotColor
+            button.checkColor = checkColor
+            button.textColorDisabled = textColorDisabled
 
             if variant == "mutuallyExclusive" {
                 button.addTarget(self, action: #selector(radioButtonTapped(_:)), for: .touchUpInside)
@@ -933,6 +1148,7 @@ class ChoicePickerComponent: Component {
 
     /// Update selected value
     private func updateSelectedValue(_ value: Any) {
+        lastSelectedValue = value
         if displayStyle == "chips" {
             // Chips style
             if variant == "mutuallyExclusive" {
@@ -1034,6 +1250,7 @@ class ChoicePickerComponent: Component {
         }
 
         selectedRadioIndex = index
+        lastSelectedValue = sender.value
 
         // Send data change
         syncState(["value": sender.value])
@@ -1053,6 +1270,7 @@ class ChoicePickerComponent: Component {
                 selectedValues.append(button.value)
             }
         }
+        lastSelectedValue = selectedValues
 
         syncState(["value": selectedValues])
     }
@@ -1066,6 +1284,7 @@ class ChoicePickerComponent: Component {
             for button in chipButtons {
                 button.isSelected = (button == sender)
             }
+            lastSelectedValue = [sender.value]
 
             // Send data change as array (catalog requires DynamicStringList)
             syncState(["value": [sender.value]])
@@ -1080,6 +1299,7 @@ class ChoicePickerComponent: Component {
                     selectedValues.append(button.value)
                 }
             }
+            lastSelectedValue = selectedValues
 
             syncState(["value": selectedValues])
         }

@@ -226,6 +226,7 @@ static const char* const kBaseComponentSpecConfig = R"JSON({
         "default": {
           "width": "auto",
           "height": "auto",
+          "align-self": "center",
           "background-color": {"call": "token", "args": {"name": "Color_BG_L5"}},
           "border-radius": "16px",
           "border-width": "1px",
