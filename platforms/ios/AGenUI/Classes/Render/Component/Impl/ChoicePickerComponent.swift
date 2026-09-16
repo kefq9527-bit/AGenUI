@@ -1173,18 +1173,55 @@ class ChoicePickerComponent: Component {
         if displayStyle == "chips" {
             // Chips style
             if variant == "mutuallyExclusive" {
-                updateChipRadioSelection(value as? String)
+                updateChipRadioSelection(Self.singleSelectionValue(from: value))
             } else {
-                updateChipCheckBoxSelection(value as? [String] ?? [])
+                updateChipCheckBoxSelection(Self.multiSelectionValues(from: value))
             }
         } else {
             // Checkbox style
             if variant == "mutuallyExclusive" {
-                updateRadioSelection(value as? String)
+                updateRadioSelection(Self.singleSelectionValue(from: value))
             } else {
-                updateCheckBoxSelection(value as? [String] ?? [])
+                updateCheckBoxSelection(Self.multiSelectionValues(from: value))
             }
         }
+    }
+
+    /// Normalize a raw `value` into a single-selection string.
+    /// The A2UI catalog declares ChoicePicker value as DynamicStringList, so an
+    /// array payload (e.g. `["option_1"]`) is the canonical form; a plain String
+    /// is also accepted for backward compatibility. Returns nil when empty.
+    private static func singleSelectionValue(from value: Any) -> String? {
+        if let str = value as? String {
+            Logger.shared.info("ChoicePicker single selection normalized from String: \(str)")
+            return str.isEmpty ? nil : str
+        }
+        if let array = value as? [Any] {
+            if let first = array.first as? String {
+                Logger.shared.info("ChoicePicker single selection normalized from array first element: \(first)")
+                return first.isEmpty ? nil : first
+            }
+            Logger.shared.info("ChoicePicker single selection value array has no string element, fallback to nil: \(array)")
+            return nil
+        }
+        Logger.shared.info("ChoicePicker single selection value has unsupported type \(type(of: value)), fallback to nil")
+        return nil
+    }
+
+    /// Normalize a raw `value` into a multi-selection string list.
+    /// Accepts `[String]`, `[Any]` (string elements kept) or a single String.
+    private static func multiSelectionValues(from value: Any) -> [String] {
+        if let str = value as? String {
+            Logger.shared.info("ChoicePicker multi selection normalized from String: \(str)")
+            return str.isEmpty ? [] : [str]
+        }
+        if let array = value as? [Any] {
+            let values = array.compactMap { $0 as? String }
+            Logger.shared.info("ChoicePicker multi selection normalized from array: \(values)")
+            return values
+        }
+        Logger.shared.info("ChoicePicker multi selection value has unsupported type \(type(of: value)), fallback to empty")
+        return []
     }
 
     /// Update radio button selected state
@@ -1279,7 +1316,10 @@ class ChoicePickerComponent: Component {
 
     /// Radio button tap handler
     @objc private func radioButtonTapped(_ sender: CheckBoxButton) {
-        guard !isUpdatingFromNative, !isDisabled else { return }
+        guard !isUpdatingFromNative, !isDisabled else {
+            Logger.shared.info("ChoicePicker radio tap ignored, isUpdatingFromNative=\(isUpdatingFromNative), isDisabled=\(isDisabled)")
+            return
+        }
 
         let index = sender.tag
 
@@ -1289,10 +1329,11 @@ class ChoicePickerComponent: Component {
         }
 
         selectedRadioIndex = index
-        lastSelectedValue = sender.value
+        lastSelectedValue = [sender.value]
 
-        // Send data change
-        syncState(["value": sender.value])
+        // Send data change as array (catalog requires DynamicStringList)
+        syncState(["value": [sender.value]])
+        Logger.shared.info("ChoicePicker radio tapped, sync value as array: [\(sender.value)]")
     }
 
     /// Checkbox button tap handler
@@ -1324,7 +1365,7 @@ class ChoicePickerComponent: Component {
                 button.isSelected = (button == sender)
             }
 
-            lastSelectedValue = sender.value
+            lastSelectedValue = [sender.value]
 
             // Send data change as array (catalog requires DynamicStringList)
             syncState(["value": [sender.value]])
