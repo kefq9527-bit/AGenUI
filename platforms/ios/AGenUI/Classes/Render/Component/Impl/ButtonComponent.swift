@@ -26,8 +26,8 @@ class ButtonComponent: Component {
     // MARK: - Properties
     
     private var isDisabled: Bool = false
-    private var disabledBackgroundColor: UIColor?
-    private var normalBackgroundColor: UIColor?
+    private var disabledBackgroundColor: UIColor? = UIColor(hexString: "#84C4FF")
+    private var normalBackgroundColor: UIColor? = UIColor(hexString: "#2496FF")
     private var disabledOpacity: CGFloat = 0.4  // Default disabled opacity
     /// Alpha value recorded just before entering the disabled state, used to restore
     /// the correct opacity (which may come from a CSS "opacity" style) when re-enabled.
@@ -59,8 +59,12 @@ class ButtonComponent: Component {
             normalAlpha = alpha
         }
         
-        // Read background-color-disabled and disabled-opacity properties from styles field
+        // Read background-color and background-color-disabled properties from styles field.
+        // Explicit CSS colors win over the built-in defaults (#2496FF normal / #84C4FF disabled).
         if case .value(let stylesValue) = diff["styles"], let styles = stylesValue as? [String: Any] {
+            if let normalColorStr = styles["background-color"] as? String {
+                self.normalBackgroundColor = UIColor(hexString: normalColorStr)
+            }
             if let disabledColorStr = styles["background-color-disabled"] as? String {
                 self.disabledBackgroundColor = UIColor(hexString: disabledColorStr)
             }
@@ -109,12 +113,12 @@ class ButtonComponent: Component {
             // Disabled state
             isUserInteractionEnabled = false
             
-            // If disabled background color specified, use it; otherwise use default gray
+            // If disabled background color specified, use it; otherwise use default
             if let disabledColor = disabledBackgroundColor {
                 backgroundColor = disabledColor
             } else {
-                // Default disabled background color is light gray
-                backgroundColor = UIColor(hexString: "#CCCCCC")
+                // Default disabled background color
+                backgroundColor = UIColor(hexString: "#84C4FF")
             }
             
             // Use configured disabled opacity

@@ -218,7 +218,8 @@ static const char* const kBaseComponentSpecConfig = R"JSON({
         "enum": {
           "default": {"styles": {}},
           "borderless": {"styles": {
-            "border-width": "0px"
+            "border-width": "0px",
+            "background-color": "transparent"
           }}
         }
       },
@@ -226,7 +227,9 @@ static const char* const kBaseComponentSpecConfig = R"JSON({
         "default": {
           "width": "auto",
           "height": "auto",
-          "background-color": {"call": "token", "args": {"name": "Color_BG_L5"}},
+          "justify-content": "center",
+          "align-items": "center",
+          "background-color": "#2496FF",
           "border-radius": "16px",
           "border-width": "1px",
           "border-color": "rgba(0, 0, 0, 0.06)"
