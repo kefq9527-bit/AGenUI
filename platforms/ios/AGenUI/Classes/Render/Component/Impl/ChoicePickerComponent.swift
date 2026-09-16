@@ -290,6 +290,16 @@ class ChoicePickerComponent: Component {
     private var textColor: UIColor = .black
     private var textSize: CGFloat = 16
     private var choiceGap: CGFloat = 4  // Gap between options
+    private var itemBackgroundColor: UIColor = .clear
+    private var itemCornerRadius: CGFloat = 0
+    private var itemPaddingHorizontal: CGFloat = 0
+    private var itemPaddingVertical: CGFloat = 0
+    private var textColorDisabled: UIColor = UIColor.black.withAlphaComponent(0.4)
+    private var disabledBackgroundColor: UIColor = UIColor(red: 0xEB/255.0, green: 0xEB/255.0, blue: 0xEB/255.0, alpha: 1.0)
+    private var disabledBorderColor: UIColor = UIColor.black.withAlphaComponent(0.1)
+    private var disabledSelectedBackgroundColor: UIColor = UIColor(red: 0xEB/255.0, green: 0xEB/255.0, blue: 0xEB/255.0, alpha: 1.0)
+    private var exclusiveBorderRadius: CGFloat? = nil
+    private var disabledOpacity: CGFloat = 0.5
 
     // Heights used by layoutSubviews when search/no-results are visible
     private let searchInputHeight: CGFloat = 44
@@ -389,9 +399,10 @@ class ChoicePickerComponent: Component {
         var textMargin: CGFloat = 8
         var textSize: CGFloat = 16
         var choiceGap: CGFloat = 4
+        var paddingVertical: CGFloat = 0
+        var paddingHorizontal: CGFloat = 0
 
-        if let config = ComponentStyleConfigManager.shared.getConfig(for: "ChoicePicker"),
-           let pickerConfig = config["ChoicePicker"] as? [String: Any] {
+        if let pickerConfig = ComponentStyleConfigManager.shared.getConfig(for: "ChoicePicker") {
             if let size = pickerConfig["checkbox-size"] as? String,
                let value = ComponentStyleConfigManager.parseSize(size) {
                 checkboxSize = value
@@ -407,6 +418,14 @@ class ChoicePickerComponent: Component {
             if let gap = pickerConfig["choice-gap"] as? String,
                let value = ComponentStyleConfigManager.parseSize(gap) {
                 choiceGap = value
+            }
+            if let padding = pickerConfig["item-padding-vertical"] as? String,
+               let value = ComponentStyleConfigManager.parseSize(padding) {
+                paddingVertical = value
+            }
+            if let padding = pickerConfig["item-padding-horizontal"] as? String,
+               let value = ComponentStyleConfigManager.parseSize(padding) {
+                paddingHorizontal = value
             }
         }
 
@@ -443,13 +462,14 @@ class ChoicePickerComponent: Component {
                 var contentH = checkboxH
                 if !text.isEmpty {
                     let attributedString = NSAttributedString(string: text, attributes: [.font: font])
-                    let textAvailWidth = max(1.0, constraintWidth - checkboxSize - textMargin)
+                    let textAvailWidth = max(1.0, constraintWidth - checkboxSize - textMargin - paddingHorizontal * 2)
                     let textBounds = attributedString.boundingRect(
                         with: CGSize(width: textAvailWidth, height: .greatestFiniteMagnitude),
                         options: [.usesLineFragmentOrigin, .usesFontLeading],
                         context: nil)
                     contentH = max(checkboxH, ceil(textBounds.size.height))
                 }
+                contentH += paddingVertical * 2
 
                 if horizontal {
                     totalHeight = max(totalHeight, contentH)
@@ -694,7 +714,7 @@ class ChoicePickerComponent: Component {
             }
 
             // Control editability and visual feedback
-            let alpha: CGFloat = result ? 1.0 : 0.5
+            let alpha: CGFloat = result ? 1.0 : disabledOpacity
             let isEnabled = result
 
             if displayStyle == "chips" {
@@ -717,11 +737,7 @@ class ChoicePickerComponent: Component {
 
     /// Load local style configuration
     private func loadLocalStyleConfig() {
-        guard let config = ComponentStyleConfigManager.shared.getConfig(for: componentType) else {
-            return
-        }
-
-        guard let pickerConfig = config["ChoicePicker"] as? [String: Any] else {
+        guard let pickerConfig = ComponentStyleConfigManager.shared.getConfig(for: componentType) else {
             return
         }
 
@@ -786,9 +802,67 @@ class ChoicePickerComponent: Component {
            let value = ComponentStyleConfigManager.parseSize(gap) {
             self.choiceGap = value
         }
+
+        // Parse option row styles
+        if let color = pickerConfig["item-background-color"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.itemBackgroundColor = value
+        }
+        if let radius = pickerConfig["item-corner-radius"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(radius) {
+            self.itemCornerRadius = value
+        }
+        if let padding = pickerConfig["item-padding-horizontal"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(padding) {
+            self.itemPaddingHorizontal = value
+        }
+        if let padding = pickerConfig["item-padding-vertical"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(padding) {
+            self.itemPaddingVertical = value
+        }
+
+        // Parse disabled state styles
+        if let color = pickerConfig["text-color-disabled"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.textColorDisabled = value
+        }
+        if let color = pickerConfig["checkbox-background-color-disabled"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.disabledBackgroundColor = value
+        }
+        if let color = pickerConfig["checkbox-border-color-disabled"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.disabledBorderColor = value
+        }
+        if let color = pickerConfig["checkbox-background-color-selected-disabled"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.disabledSelectedBackgroundColor = value
+        }
+
+        // Parse exclusive (single selection) indicator corner radius
+        if let radius = pickerConfig["exclusive-border-radius"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(radius) {
+            self.exclusiveBorderRadius = value
+        }
+
+        // Parse disabled opacity, range 0-1
+        if let opacityStr = pickerConfig["disabled-opacity"] as? String,
+           let opacity = Double(opacityStr) {
+            self.disabledOpacity = max(0.0, min(1.0, CGFloat(opacity)))
+        } else if let opacity = pickerConfig["disabled-opacity"] as? NSNumber {
+            self.disabledOpacity = max(0.0, min(1.0, CGFloat(truncating: opacity)))
+        }
     }
 
     // MARK: - Private Methods - UI Creation
+
+    /// Single selection uses the exclusive radius (circle by config), multi selection uses the shared checkbox radius
+    private func indicatorBorderRadius() -> CGFloat {
+        guard variant == "mutuallyExclusive" else {
+            return checkboxBorderRadius
+        }
+        return exclusiveBorderRadius ?? checkboxBorderRadius
+    }
 
     /// Recreate options view
     private func recreateOptions() {
@@ -829,7 +903,7 @@ class ChoicePickerComponent: Component {
             // Apply configuration to CheckBoxButton
             button.checkboxSize = checkboxSize
             button.checkboxBorderWidth = checkboxBorderWidth
-            button.checkboxBorderRadius = checkboxBorderRadius
+            button.checkboxBorderRadius = indicatorBorderRadius()
             button.selectedBackgroundColor = selectedBackgroundColor
             button.selectedBorderColor = selectedBorderColor
             button.unselectedBackgroundColor = unselectedBackgroundColor
@@ -837,6 +911,14 @@ class ChoicePickerComponent: Component {
             button.textMargin = textMargin
             button.textColor = textColor
             button.textSize = textSize
+            button.itemBackgroundColor = itemBackgroundColor
+            button.itemCornerRadius = itemCornerRadius
+            button.itemPaddingHorizontal = itemPaddingHorizontal
+            button.itemPaddingVertical = itemPaddingVertical
+            button.textColorDisabled = textColorDisabled
+            button.disabledBackgroundColor = disabledBackgroundColor
+            button.disabledBorderColor = disabledBorderColor
+            button.disabledSelectedBackgroundColor = disabledSelectedBackgroundColor
 
             if variant == "mutuallyExclusive" {
                 button.addTarget(self, action: #selector(radioButtonTapped(_:)), for: .touchUpInside)

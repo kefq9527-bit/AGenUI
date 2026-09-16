@@ -102,6 +102,41 @@ class CheckBoxButton: UIControl {
         }
     }
     
+    /// Disabled + selected state background color
+    var disabledSelectedBackgroundColor: UIColor = UIColor(red: 0xEB/255.0, green: 0xEB/255.0, blue: 0xEB/255.0, alpha: 1.0) {
+        didSet {
+            updateAppearance()
+        }
+    }
+    
+    /// Option row background color
+    var itemBackgroundColor: UIColor = .clear {
+        didSet {
+            updateAppearance()
+        }
+    }
+    
+    /// Option row corner radius
+    var itemCornerRadius: CGFloat = 0 {
+        didSet {
+            layer.cornerRadius = itemCornerRadius
+        }
+    }
+    
+    /// Option row horizontal padding
+    var itemPaddingHorizontal: CGFloat = 0 {
+        didSet {
+            updateLayout()
+        }
+    }
+    
+    /// Option row vertical padding
+    var itemPaddingVertical: CGFloat = 0 {
+        didSet {
+            updateLayout()
+        }
+    }
+    
     /// Text to checkbox spacing
     var textMargin: CGFloat = 8 {
         didSet {
@@ -145,9 +180,10 @@ class CheckBoxButton: UIControl {
     }
     
     override func sizeThatFits(_ size: CGSize) -> CGSize {
-        let labelSize = labelView.sizeThatFits(CGSize(width: size.width - checkboxSize - textMargin, height: .greatestFiniteMagnitude))
-        let height = max(checkboxSize, labelSize.height)
-        let width = checkboxSize + textMargin + labelSize.width
+        let availWidth = size.width - checkboxSize - textMargin - itemPaddingHorizontal * 2
+        let labelSize = labelView.sizeThatFits(CGSize(width: availWidth, height: .greatestFiniteMagnitude))
+        let height = max(checkboxSize, labelSize.height) + itemPaddingVertical * 2
+        let width = checkboxSize + textMargin + labelSize.width + itemPaddingHorizontal * 2
         return CGSize(width: min(width, size.width), height: height)
     }
     
@@ -195,20 +231,31 @@ class CheckBoxButton: UIControl {
         let currentCheckboxSize = checkboxSize
         let currentTextMargin = textMargin
         
-        // Layout checkbox on the left
+        // Layout checkbox on the left, inset by row horizontal padding
         let checkBoxY = (bounds.height - currentCheckboxSize) / 2
-        checkBoxView.frame = CGRect(x: 0, y: checkBoxY, width: currentCheckboxSize, height: currentCheckboxSize)
+        checkBoxView.frame = CGRect(
+            x: itemPaddingHorizontal,
+            y: checkBoxY,
+            width: currentCheckboxSize,
+            height: currentCheckboxSize
+        )
         
-        // Layout label to the right of checkbox
-        let labelX = currentCheckboxSize + currentTextMargin
-        let labelWidth = bounds.width - labelX
+        // Layout label to the right of checkbox, inset by row paddings
+        let labelX = itemPaddingHorizontal + currentCheckboxSize + currentTextMargin
+        let labelWidth = bounds.width - labelX - itemPaddingHorizontal
         if labelWidth > 0 {
-            labelView.frame = CGRect(x: labelX, y: 0, width: labelWidth, height: bounds.height)
+            labelView.frame = CGRect(
+                x: labelX,
+                y: itemPaddingVertical,
+                width: labelWidth,
+                height: max(bounds.height - itemPaddingVertical * 2, 0)
+            )
         }
     }
     
     private func setupViews() {
         // Use FlexLayout for layout
+        clipsToBounds = true
         updateLayout()
         updateAppearance()
     }
@@ -237,9 +284,12 @@ class CheckBoxButton: UIControl {
     }
     
     private func updateAppearance() {
+        backgroundColor = itemBackgroundColor
+        layer.cornerRadius = itemCornerRadius
+        
         if !isEnabled {
-            // Disabled state: use disabled style
-            checkBoxView.backgroundColor = disabledBackgroundColor
+            // Disabled state: use disabled style, selected rows keep their own fill color
+            checkBoxView.backgroundColor = isSelected ? disabledSelectedBackgroundColor : disabledBackgroundColor
             checkBoxView.layer.borderColor = disabledBorderColor.cgColor
             checkBoxView.layer.borderWidth = checkboxBorderWidth
             labelView.textColor = textColorDisabled
