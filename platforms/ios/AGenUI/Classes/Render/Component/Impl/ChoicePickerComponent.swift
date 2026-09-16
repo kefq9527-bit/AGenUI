@@ -252,6 +252,7 @@ class ChoicePickerComponent: Component {
 
     // MARK: - Properties
 
+    private var titleLabel: UILabel?
     private var optionsContainer: UIView?
     private var errorLabel: UILabel?
     private var isUpdatingFromNative = false
@@ -289,6 +290,9 @@ class ChoicePickerComponent: Component {
     private var textMargin: CGFloat = 8
     private var textColor: UIColor = .black
     private var textSize: CGFloat = 16
+    private var labelFont: UIFont = .systemFont(ofSize: 14, weight: .medium)
+    private var labelColor: UIColor = UIColor(red: 0x1F/255.0, green: 0x29/255.0, blue: 0x37/255.0, alpha: 1.0)
+    private var labelMarginBottom: CGFloat = 8
     private var choiceGap: CGFloat = 4  // Gap between options
     private var itemBackgroundColor: UIColor = .clear
     private var itemCornerRadius: CGFloat = 0
@@ -315,6 +319,15 @@ class ChoicePickerComponent: Component {
 
         // Load style configuration
         loadLocalStyleConfig()
+
+        // Create title label (component-level `label`), hidden until a non-empty label arrives.
+        let title = UILabel()
+        title.numberOfLines = 0
+        title.font = labelFont
+        title.textColor = labelColor
+        title.isHidden = true
+        self.titleLabel = title
+        addSubview(title)
 
         // Pre-create search input view (kept hidden until filterable=true).
         // Pre-creation avoids reordering subviews when filterable toggles at runtime.
@@ -401,6 +414,9 @@ class ChoicePickerComponent: Component {
         var choiceGap: CGFloat = 4
         var paddingVertical: CGFloat = 0
         var paddingHorizontal: CGFloat = 0
+        var labelFontSize: CGFloat = 14
+        var labelFontWeight: UIFont.Weight = .medium
+        var labelMarginBottom: CGFloat = 8
 
         if let pickerConfig = ComponentStyleConfigManager.shared.getConfig(for: "ChoicePicker") {
             if let size = pickerConfig["checkbox-size"] as? String,
@@ -426,6 +442,17 @@ class ChoicePickerComponent: Component {
             if let padding = pickerConfig["item-padding-horizontal"] as? String,
                let value = ComponentStyleConfigManager.parseSize(padding) {
                 paddingHorizontal = value
+            }
+            if let size = pickerConfig["label-font-size"] as? String,
+               let value = ComponentStyleConfigManager.parseSize(size) {
+                labelFontSize = value
+            }
+            if let weight = pickerConfig["label-font-weight"] as? String {
+                labelFontWeight = ComponentStyleConfigManager.parseFontWeight(weight)
+            }
+            if let margin = pickerConfig["label-margin-bottom"] as? String,
+               let value = ComponentStyleConfigManager.parseSize(margin) {
+                labelMarginBottom = value
             }
         }
 
@@ -481,6 +508,13 @@ class ChoicePickerComponent: Component {
             }
         }
 
+        // Title (component-level `label`) sits above the options; reserve its height.
+        let titleText = labelText(from: json["label"])
+        if !titleText.isEmpty {
+            let titleFont = UIFont.systemFont(ofSize: labelFontSize, weight: labelFontWeight)
+            totalHeight += labelBlockHeight(titleText, width: constraintWidth, font: titleFont, marginBottom: labelMarginBottom)
+        }
+
         // Search input adds height when filterable is on (margin top + height + margin bottom)
         if filterable {
             totalHeight += 8 + 44 + 8
@@ -511,6 +545,13 @@ class ChoicePickerComponent: Component {
 
         let boundsWidth = bounds.width
         var currentY: CGFloat = 0
+
+        // 0. Title label at the very top (component-level `label`)
+        if let titleLabel = titleLabel, !titleLabel.isHidden, let text = titleLabel.text, !text.isEmpty {
+            let block = Self.labelBlockHeight(text, width: boundsWidth, font: labelFont, marginBottom: labelMarginBottom)
+            titleLabel.frame = CGRect(x: 0, y: 0, width: boundsWidth, height: max(0, block - labelMarginBottom))
+            currentY = block
+        }
 
         // 1. Search input bar at the top
         if let searchView = searchInputView, !searchView.isHidden {
@@ -652,6 +693,16 @@ class ChoicePickerComponent: Component {
             filterable = filterableValue
         } else if case .deleted = diff["filterable"] {
             filterable = false
+        }
+
+        // Update title label (component-level `label`)
+        if case .value(let v) = diff["label"] {
+            let text = Self.labelText(from: v)
+            titleLabel?.text = text
+            titleLabel?.isHidden = text.isEmpty
+        } else if case .deleted = diff["label"] {
+            titleLabel?.text = nil
+            titleLabel?.isHidden = true
         }
 
         // Update options
@@ -851,6 +902,26 @@ class ChoicePickerComponent: Component {
             self.disabledOpacity = max(0.0, min(1.0, CGFloat(opacity)))
         } else if let opacity = pickerConfig["disabled-opacity"] as? NSNumber {
             self.disabledOpacity = max(0.0, min(1.0, CGFloat(truncating: opacity)))
+        }
+
+        // Parse title label styles (component-level `label`)
+        var labelFontSize: CGFloat = self.labelFont.pointSize
+        var labelFontWeight: UIFont.Weight = .medium
+        if let size = pickerConfig["label-font-size"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(size) {
+            labelFontSize = value
+        }
+        if let weight = pickerConfig["label-font-weight"] as? String {
+            labelFontWeight = ComponentStyleConfigManager.parseFontWeight(weight)
+        }
+        self.labelFont = UIFont.systemFont(ofSize: labelFontSize, weight: labelFontWeight)
+        if let color = pickerConfig["label-color"] as? String,
+           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
+            self.labelColor = value
+        }
+        if let margin = pickerConfig["label-margin-bottom"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(margin) {
+            self.labelMarginBottom = value
         }
     }
 
@@ -1073,6 +1144,12 @@ class ChoicePickerComponent: Component {
 
     /// Extract text value
     private func extractTextValue(_ value: Any?) -> String {
+        return Self.labelText(from: value)
+    }
+
+    /// Extract a display string from a raw property value (shared by measure & render).
+    /// Handles plain String, DynamicString `{"literalString": ...}` and `{"path": ...}` (→ "").
+    private static func labelText(from value: Any?) -> String {
         guard let value = value else { return "" }
 
         if let valueDict = value as? [String: Any] {
@@ -1089,6 +1166,18 @@ class ChoicePickerComponent: Component {
         }
 
         return String(describing: value)
+    }
+
+    /// Compute the title block height (text height + bottom margin) for a label.
+    /// Shared by `measure` and `layoutSubviews` so the reserved height always equals the laid-out height.
+    private static func labelBlockHeight(_ text: String, width: CGFloat, font: UIFont, marginBottom: CGFloat) -> CGFloat {
+        guard !text.isEmpty, width > 0 else { return 0 }
+        let attributed = NSAttributedString(string: text, attributes: [.font: font])
+        let rect = attributed.boundingRect(
+            with: CGSize(width: width, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            context: nil)
+        return ceil(rect.height) + marginBottom
     }
 
     // MARK: - Private Methods - Error Display
