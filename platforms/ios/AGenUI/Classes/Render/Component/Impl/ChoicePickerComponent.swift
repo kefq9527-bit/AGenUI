@@ -297,6 +297,7 @@ class ChoicePickerComponent: Component {
     // Option buttons for checkbox display style
     private var optionButtons: [CheckBoxButton] = []
     private var selectedRadioIndex: Int?
+    private var lastSelectedValue: Any?
 
     // Option buttons for chips display style
     private var chipButtons: [ChipButton] = []
@@ -766,8 +767,17 @@ class ChoicePickerComponent: Component {
             filteredOptions = options
         }
 
-        // Recreate options view (uses filtered list if filterable)
-        recreateOptions()
+        // Recreate options view only when the option structure actually changed;
+        // an unconditional rebuild would wipe the current selection on unrelated
+        // incremental updates (e.g. disable/checks-only diffs).
+        let structureChanged = diff["variant"] != nil
+            || diff["displayStyle"] != nil
+            || diff["filterable"] != nil
+            || diff["options"] != nil
+            || diff["styles"] != nil
+        if structureChanged {
+            recreateOptions()
+        }
 
         // Update no-results label visibility based on current filtered list
         if filterable && filteredOptions.isEmpty && !options.isEmpty {
@@ -778,10 +788,12 @@ class ChoicePickerComponent: Component {
 
         // Update selected state (data update from C++)
         if case .value(let value) = diff["value"] {
+            lastSelectedValue = value
             isUpdatingFromNative = true
             updateSelectedValue(value)
             isUpdatingFromNative = false
         } else if case .deleted = diff["value"] {
+            lastSelectedValue = nil
             isUpdatingFromNative = true
             updateSelectedValue([])
             isUpdatingFromNative = false
@@ -994,7 +1006,18 @@ class ChoicePickerComponent: Component {
         // Re-apply disabled state after rebuild (covers updateProperties & filterOptions paths)
         applyDisabledToOptions()
 
+        replaySelectedValue()
+
         setNeedsLayout()
+    }
+
+    /// Re-apply the persisted selection onto freshly rebuilt option buttons so
+    /// rebuilds (structure updates, search filtering) never silently clear it.
+    private func replaySelectedValue() {
+        guard let value = lastSelectedValue else { return }
+        isUpdatingFromNative = true
+        updateSelectedValue(value)
+        isUpdatingFromNative = false
     }
 
     /// Force-disable all option buttons when `disable` is set.
@@ -1266,6 +1289,7 @@ class ChoicePickerComponent: Component {
         }
 
         selectedRadioIndex = index
+        lastSelectedValue = sender.value
 
         // Send data change
         syncState(["value": sender.value])
@@ -1286,6 +1310,7 @@ class ChoicePickerComponent: Component {
             }
         }
 
+        lastSelectedValue = selectedValues
         syncState(["value": selectedValues])
     }
 
@@ -1298,6 +1323,8 @@ class ChoicePickerComponent: Component {
             for button in chipButtons {
                 button.isSelected = (button == sender)
             }
+
+            lastSelectedValue = sender.value
 
             // Send data change as array (catalog requires DynamicStringList)
             syncState(["value": [sender.value]])
@@ -1313,6 +1340,7 @@ class ChoicePickerComponent: Component {
                 }
             }
 
+            lastSelectedValue = selectedValues
             syncState(["value": selectedValues])
         }
     }
