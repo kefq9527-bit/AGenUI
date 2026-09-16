@@ -31,12 +31,25 @@ private class ChipButton: UIButton {
     var unselectedBorderColor: UIColor = UIColor.black.withAlphaComponent(0.1)
     var unselectedTextColor: UIColor = .black
 
+    // Disabled colors (defaults aligned with ChoicePicker config)
+    var disabledBackgroundColor: UIColor = .clear
+    var disabledBorderColor: UIColor = UIColor(red: 0xDC/255.0, green: 0xE0/255.0, blue: 0xE6/255.0, alpha: 1.0)
+    var disabledTextColor: UIColor = UIColor(red: 0xC0/255.0, green: 0xC4/255.0, blue: 0xCC/255.0, alpha: 1.0)
+    var disabledSelectedBackgroundColor: UIColor = UIColor(red: 0x8C/255.0, green: 0xC5/255.0, blue: 0xF8/255.0, alpha: 1.0)
+    var disabledSelectedTextColor: UIColor = .white
+
     // State
     private var _isSelected: Bool = false
     override var isSelected: Bool {
         get { _isSelected }
         set {
             _isSelected = newValue
+            updateAppearance()
+        }
+    }
+
+    override var isEnabled: Bool {
+        didSet {
             updateAppearance()
         }
     }
@@ -71,7 +84,20 @@ private class ChipButton: UIButton {
     // MARK: - Appearance Update
 
     private func updateAppearance() {
-        if _isSelected {
+        if !isEnabled {
+            // Disabled state: selected chips keep a distinct disabled-selected fill
+            if _isSelected {
+                backgroundColor = disabledSelectedBackgroundColor
+                setTitleColor(disabledSelectedTextColor, for: .normal)
+                setTitleColor(disabledSelectedTextColor, for: .disabled)
+                layer.borderColor = disabledSelectedBackgroundColor.cgColor
+            } else {
+                backgroundColor = disabledBackgroundColor
+                setTitleColor(disabledTextColor, for: .normal)
+                setTitleColor(disabledTextColor, for: .disabled)
+                layer.borderColor = disabledBorderColor.cgColor
+            }
+        } else if _isSelected {
             backgroundColor = selectedBackgroundColor
             setTitleColor(selectedTextColor, for: .normal)
             layer.borderColor = selectedBackgroundColor.cgColor
@@ -256,6 +282,7 @@ class ChoicePickerComponent: Component {
     private var optionsContainer: UIView?
     private var errorLabel: UILabel?
     private var isUpdatingFromNative = false
+    private var isDisabled: Bool = false
 
     private var variant: String = "mutuallyExclusive" // Default single selection
     private var displayStyle: String = "checkbox" // Default checkbox style
@@ -695,6 +722,13 @@ class ChoicePickerComponent: Component {
             filterable = false
         }
 
+        // Update disable state (component-level `disable`)
+        if case .value(let v) = diff["disable"], let disableValue = v as? Bool {
+            isDisabled = disableValue
+        } else if case .deleted = diff["disable"] {
+            isDisabled = false
+        }
+
         // Update title label (component-level `label`)
         if case .value(let v) = diff["label"] {
             let text = Self.labelText(from: v)
@@ -780,6 +814,9 @@ class ChoicePickerComponent: Component {
                 }
             }
         }
+
+        // `disable` takes precedence over checks: force-disable options when set
+        applyDisabledToOptions()
 
         setNeedsLayout()
     }
@@ -954,7 +991,21 @@ class ChoicePickerComponent: Component {
             createOptions(in: optionsContainer)
         }
 
+        // Re-apply disabled state after rebuild (covers updateProperties & filterOptions paths)
+        applyDisabledToOptions()
+
         setNeedsLayout()
+    }
+
+    /// Force-disable all option buttons when `disable` is set.
+    /// Idempotent; safe to call after every rebuild and after the checks block.
+    private func applyDisabledToOptions() {
+        guard isDisabled else { return }
+        if displayStyle == "chips" {
+            chipButtons.forEach { $0.isEnabled = false }
+        } else {
+            optionButtons.forEach { $0.isEnabled = false }
+        }
     }
 
     /// Create options (single and multi selection both use CheckBoxButton)
@@ -1026,6 +1077,11 @@ class ChoicePickerComponent: Component {
             chipButton.unselectedBackgroundColor = .clear
             chipButton.unselectedBorderColor = UIColor.black.withAlphaComponent(0.1)
             chipButton.unselectedTextColor = textColor
+            chipButton.disabledBackgroundColor = disabledBackgroundColor
+            chipButton.disabledBorderColor = disabledBorderColor
+            chipButton.disabledTextColor = textColorDisabled
+            chipButton.disabledSelectedBackgroundColor = disabledSelectedBackgroundColor
+            chipButton.disabledSelectedTextColor = .white
 
             chipButton.addTarget(self, action: #selector(chipButtonTapped(_:)), for: .touchUpInside)
 
@@ -1200,7 +1256,7 @@ class ChoicePickerComponent: Component {
 
     /// Radio button tap handler
     @objc private func radioButtonTapped(_ sender: CheckBoxButton) {
-        guard !isUpdatingFromNative else { return }
+        guard !isUpdatingFromNative, !isDisabled else { return }
 
         let index = sender.tag
 
@@ -1217,7 +1273,7 @@ class ChoicePickerComponent: Component {
 
     /// Checkbox button tap handler
     @objc private func checkBoxButtonTapped(_ sender: CheckBoxButton) {
-        guard !isUpdatingFromNative else { return }
+        guard !isUpdatingFromNative, !isDisabled else { return }
 
         // Toggle selected state (multi selection mode: multiple can be selected)
         sender.isSelected = !sender.isSelected
@@ -1235,7 +1291,7 @@ class ChoicePickerComponent: Component {
 
     /// Chip button tap handler (works for both single and multi selection)
     @objc private func chipButtonTapped(_ sender: ChipButton) {
-        guard !isUpdatingFromNative else { return }
+        guard !isUpdatingFromNative, !isDisabled else { return }
 
         if variant == "mutuallyExclusive" {
             // Single selection mode: only one can be selected
