@@ -25,7 +25,7 @@ static const char* const kBaseComponentSpecConfig = R"JSON({
           "width": "auto",
           "height": "auto",
           "font-family": "system",
-          "line-clamp": 1,
+          "line-clamp": 0,
           "text-align": "left",
           "text-overflow": "ellipsis"
         }
