@@ -1,0 +1,535 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.2 effective-5.10 (swiftlang-6.2.0.19.9 clang-1700.3.19.1)
+// swift-module-flags: -target arm64-apple-ios13.0 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -Osize -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name AGenUI
+// swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.2
+@_exported import AGenUI
+import AVFoundation
+import AVKit
+import CoreText
+import CryptoKit
+import Foundation
+import ImageIO
+import Swift
+import UIKit
+import WebKit
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objc(AGenUISDK) public class AGenUISDK : ObjectiveC.NSObject {
+  @objc public static func registerDefaultTheme(_ theme: Swift.String, designToken: Swift.String) -> AGenUI.AGenUIError
+  @objc public static func setDayNightMode(_ mode: Swift.String)
+  @objc public static func setDebug(_ isDebug: Swift.Bool)
+  @objc public static func isDebug() -> Swift.Bool
+  @objc public static func setPathConfig(_ configJson: Swift.String) -> AGenUI.AGenUIError
+  @objc public static func setRuntimeConfig(_ configJson: Swift.String) -> AGenUI.AGenUIError
+  public static func registerComponent<T>(_ type: Swift.String, creator: @escaping (Swift.String, [Swift.String : Any]) -> T) where T : AGenUI.Component
+  @objc(registerComponent:creator:) public static func registerComponentObjC(_ type: Swift.String, creator: @escaping (Swift.String, [Swift.String : Any]) -> AGenUI.Component)
+  @objc(registerComponent:componentClassName:creator:) public static func registerComponentObjC(_ type: Swift.String, componentClassName: Swift.String, creator: @escaping (Swift.String, [Swift.String : Any]) -> AGenUI.Component)
+  @objc public static func unRegisterComponent(_ type: Swift.String)
+  @discardableResult
+  @objc(registerDeepParseProperty:propertyName:) public static func registerDeepParseProperty(_ componentType: Swift.String, propertyName: Swift.String) -> Swift.Bool
+  @objc(registerImageLoader:) public static func registerImageLoader(_ loader: any AGenUI.ImageLoader)
+  @objc(registerFont:fileURL:) public static func registerFont(_ familyName: Swift.String, fileURL: Foundation.URL) -> Swift.Bool
+  @objc(registerFont:fontName:) public static func registerFont(_ familyName: Swift.String, fontName: Swift.String) -> Swift.Bool
+  @objc(registerFunction:) public static func registerFunction(_ function: any AGenUI.Function)
+  @objc(unregisterFunctionWithName:) public static func unregisterFunction(_ name: Swift.String)
+  #if compiler(>=5.3) && $NonescapableTypes
+  @objc public static func setCustomLogger(_ customLogger: (any AGenUI.LoggerDelegate)?)
+  #endif
+  @objc public static func setMinLogLevel(_ level: AGenUI.Logger.Level)
+  @objc public static func getMinLogLevel() -> AGenUI.Logger.Level
+  @objc public static func getVersion() -> Swift.String
+  @objc deinit
+}
+@objc public class AGenUIError : ObjectiveC.NSObject {
+  @objc final public let result: Swift.Bool
+  @objc final public let message: Swift.String
+  @objc public init(result: Swift.Bool, message: Swift.String)
+  @objc deinit
+}
+public enum AGUIColorType : Swift.Int {
+  case solid
+  case gradient
+  #if compiler(>=5.3) && $NonescapableTypes
+  public init?(rawValue: Swift.Int)
+  #endif
+  public typealias RawValue = Swift.Int
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+public enum AGUIGradientType : Swift.Int {
+  case linear
+  case radial
+  case conic
+  #if compiler(>=5.3) && $NonescapableTypes
+  public init?(rawValue: Swift.Int)
+  #endif
+  public typealias RawValue = Swift.Int
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+public enum AGUIStopUnit : Swift.Int {
+  case percent
+  case px
+  case deg
+  case grad
+  case rad
+  case turn
+  #if compiler(>=5.3) && $NonescapableTypes
+  public init?(rawValue: Swift.Int)
+  #endif
+  public typealias RawValue = Swift.Int
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+public enum AGUIRadialShape : Swift.Int {
+  case circle
+  case ellipse
+  #if compiler(>=5.3) && $NonescapableTypes
+  public init?(rawValue: Swift.Int)
+  #endif
+  public typealias RawValue = Swift.Int
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+public enum AGUIRadialSize : Swift.Int {
+  case closestSide
+  case closestCorner
+  case farthestSide
+  case farthestCorner
+  #if compiler(>=5.3) && $NonescapableTypes
+  public init?(rawValue: Swift.Int)
+  #endif
+  public typealias RawValue = Swift.Int
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+@_hasMissingDesignatedInitializers final public class AGUIColorStop {
+  final public let color: Swift.UInt32
+  final public let position: Swift.Float
+  final public let unit: AGenUI.AGUIStopUnit
+  final public let hasPosition: Swift.Bool
+  final public let isHint: Swift.Bool
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class AGUILinearParams {
+  final public let angle: Swift.Float
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class AGUIRadialParams {
+  final public let shape: AGenUI.AGUIRadialShape
+  final public let size: AGenUI.AGUIRadialSize
+  final public let centerX: Swift.Float
+  final public let centerY: Swift.Float
+  final public let centerXIsPx: Swift.Bool
+  final public let centerYIsPx: Swift.Bool
+  final public let radiusX: Swift.Float
+  final public let radiusY: Swift.Float
+  final public let hasExplicitSize: Swift.Bool
+  final public let radiusXIsPercent: Swift.Bool
+  final public let radiusYIsPercent: Swift.Bool
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class AGUIConicParams {
+  final public let startAngle: Swift.Float
+  final public let centerX: Swift.Float
+  final public let centerY: Swift.Float
+  final public let centerXIsPx: Swift.Bool
+  final public let centerYIsPx: Swift.Bool
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class AGUIGradientInfo {
+  final public let gradientType: AGenUI.AGUIGradientType
+  final public let isRepeating: Swift.Bool
+  final public let colorStops: [AGenUI.AGUIColorStop]
+  final public let linear: AGenUI.AGUILinearParams?
+  final public let radial: AGenUI.AGUIRadialParams?
+  final public let conic: AGenUI.AGUIConicParams?
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class AGUIColorValue {
+  final public let type: AGenUI.AGUIColorType
+  final public let solidColor: Swift.UInt32
+  final public let gradient: AGenUI.AGUIGradientInfo?
+  @objc deinit
+}
+public enum AGenUIColorBridge {
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func parseColor(_ cssValue: Swift.String) -> AGenUI.AGUIColorValue?
+  #endif
+}
+public enum MeasureMode : Swift.Int {
+  case undefined
+  case exactly
+  case atMost
+  #if compiler(>=5.3) && $NonescapableTypes
+  public init?(rawValue: Swift.Int)
+  #endif
+  public typealias RawValue = Swift.Int
+  public var rawValue: Swift.Int {
+    get
+  }
+}
+@objc @_Concurrency.MainActor @preconcurrency open class Component : UIKit.UIView {
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic public class var layerClass: Swift.AnyClass {
+    @objc get
+  }
+  @_Concurrency.MainActor @preconcurrency final public let componentId: Swift.String
+  @_Concurrency.MainActor @preconcurrency final public let componentType: Swift.String
+  @_Concurrency.MainActor @preconcurrency public var properties: [Swift.String : Any]
+  @_Concurrency.MainActor @preconcurrency public var children: [AGenUI.Component] {
+    get
+  }
+  @_Concurrency.MainActor @preconcurrency weak public var parent: AGenUI.Component?
+  @_Concurrency.MainActor @preconcurrency weak public var surface: AGenUI.Surface?
+  @_Concurrency.MainActor @preconcurrency public var onPropertiesUpdate: (([Swift.String : Any]) -> Swift.Void)?
+  @_Concurrency.MainActor @preconcurrency public var onFrameChange: ((CoreFoundation.CGRect) -> Swift.Void)?
+  @_Concurrency.MainActor @preconcurrency public init(componentId: Swift.String, componentType: Swift.String, properties: [Swift.String : Any] = [:])
+  #if compiler(>=5.3) && $NonescapableTypes
+  @_Concurrency.MainActor @preconcurrency @objc required dynamic public init?(coder: Foundation.NSCoder)
+  #endif
+  @_Concurrency.MainActor open func addChild(_ child: AGenUI.Component)
+  @_Concurrency.MainActor open func removeChild(_ child: AGenUI.Component)
+  #if compiler(>=5.3) && $NonescapableTypes
+  @_Concurrency.MainActor public func getChild(_ componentId: Swift.String) -> AGenUI.Component?
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @_Concurrency.MainActor public func findChild(_ componentId: Swift.String) -> AGenUI.Component?
+  #endif
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic open func removeFromSuperview()
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic open func didMoveToSuperview()
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic open var isHidden: Swift.Bool {
+    @objc get
+    @objc set
+  }
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic open var alpha: CoreFoundation.CGFloat {
+    @objc get
+    @objc set
+  }
+  @_Concurrency.MainActor open func getChildrenIdsFromProperties() -> [Swift.String]
+  @_Concurrency.MainActor open func updateProperties(_ diff: [Swift.String : AGenUI.DiffValue])
+  @_Concurrency.MainActor open func setBorderRadius(_ radius: CoreFoundation.CGFloat)
+  @_Concurrency.MainActor @preconcurrency public static let BS_POINT_SCALE: CoreFoundation.CGFloat
+  @_Concurrency.MainActor @preconcurrency open func shouldCreateChildView() -> Swift.Bool
+  @_Concurrency.MainActor @preconcurrency public var isViewCreated: Swift.Bool {
+    get
+  }
+  @_Concurrency.MainActor @preconcurrency open func createView()
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic open var frame: CoreFoundation.CGRect {
+    @objc get
+    @objc set
+  }
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic open var center: CoreFoundation.CGPoint {
+    @objc get
+    @objc set
+  }
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic open var bounds: CoreFoundation.CGRect {
+    @objc get
+    @objc set
+  }
+  @_Concurrency.MainActor @preconcurrency open func notifyLayoutChanged(width: CoreFoundation.CGFloat, height: CoreFoundation.CGFloat)
+  @objc @_Concurrency.MainActor @preconcurrency public func triggerAction()
+  @objc @_Concurrency.MainActor @preconcurrency public func triggerAction(context: [Swift.String : Any])
+  @objc @_Concurrency.MainActor @preconcurrency public func syncState(_ change: [Swift.String : Any])
+  @objc @_Concurrency.MainActor @preconcurrency open func handleTap()
+  @_Concurrency.MainActor @preconcurrency open class func measure(type: Swift.String, paramJson: Swift.String, maxWidth: Swift.Float, widthMode: AGenUI.MeasureMode, maxHeight: Swift.Float, heightMode: AGenUI.MeasureMode) -> CoreFoundation.CGSize
+  @objc deinit
+}
+public struct CSSMargin {
+  public let top: CoreFoundation.CGFloat
+  public let right: CoreFoundation.CGFloat
+  public let bottom: CoreFoundation.CGFloat
+  public let left: CoreFoundation.CGFloat
+  public static let zero: AGenUI.CSSMargin
+  public var hasAny: Swift.Bool {
+    get
+  }
+}
+public enum CSSMarginResolver {
+  public static let pointScale: CoreFoundation.CGFloat
+  public static func resolve(_ styles: [Swift.String : Any]) -> AGenUI.CSSMargin
+  public static func hasAnyMarginKey(_ styles: [Swift.String : Any]) -> Swift.Bool
+}
+public struct CSSPadding {
+  public let top: CoreFoundation.CGFloat
+  public let right: CoreFoundation.CGFloat
+  public let bottom: CoreFoundation.CGFloat
+  public let left: CoreFoundation.CGFloat
+  public static let zero: AGenUI.CSSPadding
+  public var hasAny: Swift.Bool {
+    get
+  }
+}
+public enum CSSPaddingResolver {
+  public static let pointScale: CoreFoundation.CGFloat
+  public static func resolve(_ styles: [Swift.String : Any]) -> AGenUI.CSSPadding
+  public static func hasAnyPaddingKey(_ styles: [Swift.String : Any]) -> Swift.Bool
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func parseLengthPt(_ value: Any?) -> CoreFoundation.CGFloat?
+  #endif
+}
+@_hasMissingDesignatedInitializers public class CSSPropertyParser {
+  public static func parseDimension(_ value: Swift.String) -> AGenUI.CSSPropertyValue
+  public static func parseColor(_ value: Swift.String) -> AGenUI.CSSPropertyValue
+  public static func parseFilter(_ value: Swift.String) -> AGenUI.CSSPropertyValue
+  public static func parseFontWeight(_ value: Swift.String) -> UIKit.UIFont.Weight
+  public static func extractStringValue(_ value: Any) -> Swift.String
+  #if compiler(>=5.3) && $NonescapableTypes
+  public static func extractNumberValue(_ value: Any) -> Swift.Double?
+  #endif
+  public static func extractBooleanValue(_ value: Any) -> Swift.Bool
+  @objc deinit
+}
+public enum CSSPropertyValue : Swift.Equatable {
+  case number(CoreFoundation.CGFloat)
+  case percentage(CoreFoundation.CGFloat)
+  case color(UIKit.UIColor)
+  case keyword(Swift.String)
+  case shadow(AGenUI.CSSShadow)
+  case gradient(AGenUI.AGUIGradientInfo)
+  case url(Swift.String)
+  case invalid
+  public static func == (lhs: AGenUI.CSSPropertyValue, rhs: AGenUI.CSSPropertyValue) -> Swift.Bool
+}
+public struct CSSShadow : Swift.Equatable {
+  public let offsetX: CoreFoundation.CGFloat
+  public let offsetY: CoreFoundation.CGFloat
+  public let blur: CoreFoundation.CGFloat
+  public let color: UIKit.UIColor
+  public static func == (lhs: AGenUI.CSSShadow, rhs: AGenUI.CSSShadow) -> Swift.Bool
+}
+public class DefaultImageLoader : AGenUI.ImageLoader {
+  #if compiler(>=5.3) && $NonescapableTypes
+  public init(session: Foundation.URLSession = .shared, diskCacheConfiguration: AGenUI.DiskImageCache.Configuration? = nil)
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  @discardableResult
+  @objc public func loadImage(from url: Foundation.URL, options: [Swift.String : Any]? = nil, completion: @escaping (UIKit.UIImage?, Swift.Bool, (any Swift.Error)?) -> Swift.Void) -> Swift.String
+  #endif
+  @objc public func cancel(for taskId: Swift.String)
+  @objc public func clearMemory()
+  @objc public func clearDisk()
+  @objc deinit
+}
+public enum DiffValue {
+  case value(Any)
+  case deleted
+  public static func from(_ raw: [Swift.String : Any]) -> [Swift.String : AGenUI.DiffValue]
+}
+extension Swift.Dictionary where Key == Swift.String, Value == AGenUI.DiffValue {
+  public func toRaw() -> [Swift.String : Any]
+}
+public class DiskImageCache {
+  public struct Configuration {
+    public var directoryName: Swift.String
+    public var maxDiskSize: Swift.UInt
+    public var expirationInterval: Swift.Double
+    public init()
+  }
+  public init(configuration: AGenUI.DiskImageCache.Configuration = Configuration())
+  public func store(_ image: UIKit.UIImage, for url: Foundation.URL)
+  public func store(_ data: Foundation.Data, for url: Foundation.URL)
+  #if compiler(>=5.3) && $NonescapableTypes
+  public func data(for url: Foundation.URL) -> Foundation.Data?
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
+  public func image(for url: Foundation.URL) -> UIKit.UIImage?
+  #endif
+  public func remove(for url: Foundation.URL)
+  public func removeAll()
+  public func cleanExpired()
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class FontRegistry {
+  public static let shared: AGenUI.FontRegistry
+  @discardableResult
+  final public func registerFont(familyName: Swift.String, fileURL: Foundation.URL) -> Swift.Bool
+  @discardableResult
+  final public func registerFont(familyName: Swift.String, fontName: Swift.String) -> Swift.Bool
+  #if compiler(>=5.3) && $NonescapableTypes
+  final public func resolve(familyName: Swift.String) -> Swift.String?
+  #endif
+  @objc deinit
+}
+@objc public class FunctionConfig : ObjectiveC.NSObject {
+  @objc final public let name: Swift.String
+  @objc public init(name: Swift.String)
+  @objc public func toJSON() -> Swift.String
+  @objc deinit
+}
+@objc public class FunctionResult : ObjectiveC.NSObject {
+  @objc final public let result: Swift.Bool
+  @objc final public let value: Swift.String
+  @objc public init(result: Swift.Bool, value: Swift.String)
+  @objc public static func success(value: Swift.String) -> AGenUI.FunctionResult
+  @objc public static func failure(value: Swift.String) -> AGenUI.FunctionResult
+  @objc deinit
+}
+@objc public class FunctionCallContext : ObjectiveC.NSObject {
+  @objc final public let instanceId: Swift.Int
+  @objc final public let surfaceId: Swift.String
+  @objc public init(instanceId: Swift.Int, surfaceId: Swift.String)
+  @objc deinit
+}
+@objc public protocol Function {
+  @objc var functionConfig: AGenUI.FunctionConfig { get }
+  @objc func execute(context: AGenUI.FunctionCallContext, params: Swift.String) -> AGenUI.FunctionResult
+}
+public struct ImageLoadResult {
+  public let image: UIKit.UIImage
+  public let isFromCache: Swift.Bool
+  public init(image: UIKit.UIImage, isFromCache: Swift.Bool = false)
+}
+@_hasMissingDesignatedInitializers public class ImageLoadOptionsKey {
+  public static let width: Swift.String
+  public static let height: Swift.String
+  public static let componentId: Swift.String
+  public static let surfaceId: Swift.String
+  @objc deinit
+}
+@objc public protocol ImageLoader {
+  #if compiler(>=5.3) && $NonescapableTypes
+  @objc func loadImage(from url: Foundation.URL, options: [Swift.String : Any]?, completion: @escaping (UIKit.UIImage?, Swift.Bool, (any Swift.Error)?) -> Swift.Void) -> Swift.String
+  #endif
+  @objc func cancel(for taskId: Swift.String)
+  @objc func clearMemory()
+  @objc func clearDisk()
+}
+@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objc public class ImageLoaderConfiguration : ObjectiveC.NSObject {
+  @objc public static let shared: AGenUI.ImageLoaderConfiguration
+  @objc public var loader: any AGenUI.ImageLoader {
+    @objc get
+    @objc set
+  }
+  @objc deinit
+}
+public enum ImageLoaderError : Swift.Error, Foundation.LocalizedError, Swift.Equatable {
+  case invalidURL(Swift.String)
+  case networkError(any Swift.Error)
+  case invalidData
+  case decompressionFailed
+  case cancelled
+  public static func == (lhs: AGenUI.ImageLoaderError, rhs: AGenUI.ImageLoaderError) -> Swift.Bool
+  #if compiler(>=5.3) && $NonescapableTypes
+  public var errorDescription: Swift.String? {
+    get
+  }
+  #endif
+  public var isCancelled: Swift.Bool {
+    get
+  }
+}
+@objc public protocol LoggerDelegate {
+  @objc func onLog(level: AGenUI.Logger.Level, tag: Swift.String, func: Swift.String, line: Swift.Int, message: Swift.String)
+}
+@_inheritsConvenienceInitializers @_hasMissingDesignatedInitializers @objc public class Logger : ObjectiveC.NSObject {
+  @objc public enum Level : Swift.Int {
+    case debug = 0
+    case info = 1
+    case warning = 2
+    case error = 3
+    case fatal = 4
+    case performance = 5
+    #if compiler(>=5.3) && $NonescapableTypes
+    public init?(rawValue: Swift.Int)
+    #endif
+    public typealias RawValue = Swift.Int
+    public var rawValue: Swift.Int {
+      get
+    }
+  }
+  @objc public static let shared: AGenUI.Logger
+  @objc public var isEnabled: Swift.Bool
+  @objc public var minimumLevel: AGenUI.Logger.Level
+  @objc public var showFileInfo: Swift.Bool
+  @objc weak public var delegate: (any AGenUI.LoggerDelegate)?
+  @objc public func log(_ message: Swift.String, level: AGenUI.Logger.Level = .debug, file: Swift.String = #file, function: Swift.String = #function, line: Swift.Int = #line)
+  @objc deinit
+}
+extension AGenUI.Logger {
+  @objc dynamic public func debug(_ message: Swift.String, file: Swift.String = #file, function: Swift.String = #function, line: Swift.Int = #line)
+  @objc dynamic public func info(_ message: Swift.String, file: Swift.String = #file, function: Swift.String = #function, line: Swift.Int = #line)
+  @objc dynamic public func warning(_ message: Swift.String, file: Swift.String = #file, function: Swift.String = #function, line: Swift.Int = #line)
+  @objc dynamic public func error(_ message: Swift.String, file: Swift.String = #file, function: Swift.String = #function, line: Swift.Int = #line)
+  @objc dynamic public func fatal(_ message: Swift.String, file: Swift.String = #file, function: Swift.String = #function, line: Swift.Int = #line)
+  @objc dynamic public func performance(_ message: Swift.String, file: Swift.String = #file, function: Swift.String = #function, line: Swift.Int = #line)
+  @objc dynamic public func performance(_ eventTag: Swift.String, message: Swift.String, file: Swift.String = #file, function: Swift.String = #function, line: Swift.Int = #line)
+}
+@objc public class Surface : ObjectiveC.NSObject {
+  @objc final public let surfaceId: Swift.String
+  @objc final public let view: UIKit.UIView
+  @objc public var onLayoutChanged: (() -> Swift.Void)?
+  @objc public var animationEnabled: Swift.Bool
+  @objc public var rawProtocolContent: Swift.String
+  @objc public init(surfaceId: Swift.String)
+  @objc public func updateSize(width: CoreFoundation.CGFloat, height: CoreFoundation.CGFloat)
+  @objc public func startBlankCheck(checkDelayMs: Swift.Int, validComponentCount: Swift.Int)
+  @objc deinit
+}
+@objc public protocol SurfaceManagerListener {
+  @objc optional func onCreateSurface(_ surface: AGenUI.Surface)
+  @objc optional func onDeleteSurface(_ surface: AGenUI.Surface)
+  @objc optional func onReceiveActionEvent(_ event: Swift.String)
+  @objc optional func onRootComponentUpdate(_ surface: AGenUI.Surface, props: [Swift.String : Any])
+  #if compiler(>=5.3) && $NonescapableTypes
+  @objc optional func onError(_ surface: AGenUI.Surface?, code: Swift.Int, message: Swift.String)
+  #endif
+  @objc optional func onBlankCheckResult(_ surface: AGenUI.Surface, isBlank: Swift.Bool, componentCount: Swift.Int)
+  @objc optional func surfaceSize(for surfaceId: Swift.String) -> CoreFoundation.CGSize
+  @objc optional func onComponentAppeared(_ surface: AGenUI.Surface, parentComponentId: Swift.String, parentType: Swift.String, properties: [Swift.String : Any])
+}
+@_inheritsConvenienceInitializers @objc public class SurfaceManager : ObjectiveC.NSObject {
+  @objc override dynamic public init()
+  @objc deinit
+  @objc public func addListener(_ listener: any AGenUI.SurfaceManagerListener)
+  @objc public func removeListener(_ listener: any AGenUI.SurfaceManagerListener)
+  @objc public func removeAllListeners()
+  @objc public func getInstanceId() -> Swift.Int
+  @objc public func beginTextStream()
+  @objc public func endTextStream()
+  @objc public func receiveTextChunk(_ dataString: Swift.String)
+  @objc public func invalidateFunctionCallValues()
+}
+@objc @_Concurrency.MainActor @preconcurrency open class TabsComponent : AGenUI.Component {
+  @_Concurrency.MainActor @preconcurrency public init(componentId: Swift.String, properties: [Swift.String : Any])
+  @objc @_Concurrency.MainActor @preconcurrency open func onTabSelected(index: Swift.Int)
+  #if compiler(>=5.3) && $NonescapableTypes
+  @_Concurrency.MainActor @preconcurrency @objc required dynamic public init?(coder: Foundation.NSCoder)
+  #endif
+  @_Concurrency.MainActor @preconcurrency @objc override dynamic open func layoutSubviews()
+  @_Concurrency.MainActor @preconcurrency override open func getChildrenIdsFromProperties() -> [Swift.String]
+  @_Concurrency.MainActor @preconcurrency override open func updateProperties(_ diff: [Swift.String : AGenUI.DiffValue])
+  @_Concurrency.MainActor @preconcurrency override open func addChild(_ child: AGenUI.Component)
+  @objc deinit
+}
+extension UIKit.UIColor {
+  #if compiler(>=5.3) && $NonescapableTypes
+  convenience public init?(hexString: Swift.String)
+  #endif
+}
+extension AGenUI.AGUIColorType : Swift.Equatable {}
+extension AGenUI.AGUIColorType : Swift.Hashable {}
+extension AGenUI.AGUIColorType : Swift.RawRepresentable {}
+extension AGenUI.AGUIGradientType : Swift.Equatable {}
+extension AGenUI.AGUIGradientType : Swift.Hashable {}
+extension AGenUI.AGUIGradientType : Swift.RawRepresentable {}
+extension AGenUI.AGUIStopUnit : Swift.Equatable {}
+extension AGenUI.AGUIStopUnit : Swift.Hashable {}
+extension AGenUI.AGUIStopUnit : Swift.RawRepresentable {}
+extension AGenUI.AGUIRadialShape : Swift.Equatable {}
+extension AGenUI.AGUIRadialShape : Swift.Hashable {}
+extension AGenUI.AGUIRadialShape : Swift.RawRepresentable {}
+extension AGenUI.AGUIRadialSize : Swift.Equatable {}
+extension AGenUI.AGUIRadialSize : Swift.Hashable {}
+extension AGenUI.AGUIRadialSize : Swift.RawRepresentable {}
+extension AGenUI.MeasureMode : Swift.Equatable {}
+extension AGenUI.MeasureMode : Swift.Hashable {}
+extension AGenUI.MeasureMode : Swift.RawRepresentable {}
+extension AGenUI.Logger.Level : Swift.Equatable {}
+extension AGenUI.Logger.Level : Swift.Hashable {}
+extension AGenUI.Logger.Level : Swift.RawRepresentable {}

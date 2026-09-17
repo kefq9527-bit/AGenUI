@@ -1,0 +1,12 @@
+framework module AGenUI {
+  umbrella header "AGenUI-umbrella.h"
+
+  export *
+  module * { export * }
+}
+
+
+module AGenUI.Swift {
+  header "AGenUI-Swift.h"
+  requires objc
+}
