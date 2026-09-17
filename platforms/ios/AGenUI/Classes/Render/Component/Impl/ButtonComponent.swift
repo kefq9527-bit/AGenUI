@@ -15,6 +15,7 @@ import UIKit
 /// - action: Tap action definition - required
 /// - value: Optional boolean value (inherited from Checkable)
 /// - disable: Whether to disable button (true: not clickable, false: clickable)
+/// - checks: Validation result (Dictionary with "result"); button is not clickable while failing
 /// - background-color-disabled: Background color when button is disabled
 /// - disabled-opacity: Disabled state opacity (0-1), example: 0.5
 ///
@@ -26,6 +27,9 @@ class ButtonComponent: Component {
     // MARK: - Properties
     
     private var isDisabled: Bool = false
+    /// Persisted validation result from the `checks` property; survives diffs
+    /// that do not carry a "checks" key (styles/layout/action updates).
+    private var checksPassed: Bool = true
     private var disabledBackgroundColor: UIColor? = UIColor(hexString: "#84C4FF")
     private var normalBackgroundColor: UIColor? = UIColor(hexString: "#2496FF")
     private var disabledOpacity: CGFloat = 0.4  // Default disabled opacity
@@ -55,7 +59,9 @@ class ButtonComponent: Component {
         
         // Record the alpha set by CSS (e.g. "opacity" style) before any disabled-state
         // override, so it can be correctly restored when the button is re-enabled.
-        if !isDisabled {
+        // Skip while a disabled/checks-failed override is active, otherwise the
+        // override alpha (e.g. 0.5) would be mistaken for the CSS normal alpha.
+        if !isDisabled && checksPassed {
             normalAlpha = alpha
         }
         
@@ -90,19 +96,16 @@ class ButtonComponent: Component {
             self.disabledOpacity = max(0.0, min(1.0, CGFloat(truncating: opacity)))
         }
         
+        // checks adaptation: persist the validation result so later diffs that do
+        // not carry a "checks" key (styles/layout/action) cannot wipe the state.
+        if case .value(let v) = diff["checks"], let checks = v as? [String: Any] {
+            checksPassed = checks["result"] as? Bool ?? true
+        } else if case .deleted = diff["checks"] {
+            checksPassed = true
+        }
+        
         // Apply disabled state
         applyDisabledState()
-        
-        // checks adaptation
-        if case .value(let v) = diff["checks"], let checks = v as? [String: Any] {
-            let result = checks["result"] as? Bool ?? true
-            
-            // Control clickability and enabled state
-            isUserInteractionEnabled = result
-            
-            // Visual feedback - button grays out on validation failure
-            alpha = result ? 1.0 : 0.5
-        }
     }
     
     // MARK: - Private Methods
@@ -123,19 +126,27 @@ class ButtonComponent: Component {
             
             // Use configured disabled opacity
             alpha = disabledOpacity
-        } else {
-            // Enabled state
-            isUserInteractionEnabled = true
-            
-            // Restore normal background color
-            if let normalColor = normalBackgroundColor {
-                backgroundColor = normalColor
-            }
-            
-            // Restore the alpha that was recorded before the disabled state was applied.
-            // This correctly handles CSS "opacity" styles as well as the default alpha of 1.0.
-            alpha = normalAlpha
+            return
         }
+        
+        // Restore normal background color
+        if let normalColor = normalBackgroundColor {
+            backgroundColor = normalColor
+        }
+        
+        if !checksPassed {
+            // Validation failed: block interaction and gray out the button
+            isUserInteractionEnabled = false
+            alpha = 0.5
+            return
+        }
+        
+        // Enabled state
+        isUserInteractionEnabled = true
+        
+        // Restore the alpha that was recorded before the disabled state was applied.
+        // This correctly handles CSS "opacity" styles as well as the default alpha of 1.0.
+        alpha = normalAlpha
     }
     
     // MARK: - Layout
@@ -153,7 +164,13 @@ class ButtonComponent: Component {
     override func handleTap() {
         // If button is disabled, do not handle tap events
         if isDisabled {
-            Logger.shared.debug("ButtonComponent: Button is disabled, ignoring click: \(componentId)")
+            Logger.shared.info("ButtonComponent: Button is disabled, ignoring click: \(componentId)")
+            return
+        }
+        
+        // If validation checks failed, do not handle tap events
+        if !checksPassed {
+            Logger.shared.info("ButtonComponent: checks failed, ignoring click: \(componentId)")
             return
         }
         
