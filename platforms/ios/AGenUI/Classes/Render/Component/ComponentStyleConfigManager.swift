@@ -95,17 +95,20 @@ internal class ComponentStyleConfigManager {
             "checkbox-background-color-disabled": "#00000000",
             "checkbox-border-color-disabled": "#DCE0E6",
             "checkbox-background-color-selected-disabled": "#8CC5F8",
-            "item-background-color": "#F2F3F5",
+            "item-background-color": "#F5F6F8",
+            "item-background-color-dark": "#3c3c3c",
             "item-corner-radius": "16px",
             "item-padding-horizontal": "24px",
             "item-padding-vertical": "24px",
             "text-margin": "16px",
-            "text-color": "#1F2937",
+            "text-color": "#191919",
+            "text-color-dark": "#DADADA",
             "text-color-disabled": "#C0C4CC",
             "text-size": "28px",
             "label-font-size": "28px",
             "label-font-weight": "medium",
             "label-color": "#1F2937",
+            "label-color-dark": "#FFFFFFE6",
             "label-margin-bottom": "16px",
             "choice-gap": "16px",
             "disabled-opacity": "1",
@@ -286,6 +289,26 @@ internal class ComponentStyleConfigManager {
             return color
         }
         return nil
+    }
+
+    /// Parses light/dark color pair into a dynamic UIColor
+    ///
+    /// The returned color re-resolves against the view's traitCollection, so
+    /// already-rendered views switch automatically when the window's
+    /// userInterfaceStyle changes (no component rebuild required).
+    /// - Parameters:
+    ///   - light: color string for light mode
+    ///   - dark: color string for dark mode
+    /// - Returns: dynamic UIColor, or nil if either value fails to parse
+    static func parseDynamicColor(light: String, dark: String) -> UIColor? {
+        guard let lightColor = parseColorToUIColor(light),
+              let darkColor = parseColorToUIColor(dark) else {
+            Logger.shared.error("[parseDynamicColor] failed to parse light=\(light) dark=\(dark)")
+            return nil
+        }
+        return UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? darkColor : lightColor
+        }
     }
     
     /// Parses time values (e.g., "300ms" -> 0.3)

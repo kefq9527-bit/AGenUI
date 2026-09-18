@@ -316,13 +316,13 @@ class ChoicePickerComponent: Component {
     private var unselectedBackgroundColor: UIColor = .clear
     private var unselectedBorderColor: UIColor = UIColor.black.withAlphaComponent(0.1)
     private var textMargin: CGFloat = 8
-    private var textColor: UIColor = .black
+    private var textColor: UIColor = ChoicePickerComponent.makeDynamicColor(light: "#191919", dark: "#DADADA")
     private var textSize: CGFloat = 16
     private var labelFont: UIFont = .systemFont(ofSize: 14, weight: .medium)
-    private var labelColor: UIColor = UIColor(red: 0x1F/255.0, green: 0x29/255.0, blue: 0x37/255.0, alpha: 1.0)
+    private var labelColor: UIColor = ChoicePickerComponent.makeDynamicColor(light: "#1F2937", dark: "#FFFFFFE6")
     private var labelMarginBottom: CGFloat = 8
     private var choiceGap: CGFloat = 4  // Gap between options
-    private var itemBackgroundColor: UIColor = .clear
+    private var itemBackgroundColor: UIColor = ChoicePickerComponent.makeDynamicColor(light: "#F5F6F8", dark: "#333333")
     private var itemCornerRadius: CGFloat = 0
     private var itemPaddingHorizontal: CGFloat = 0
     private var itemPaddingVertical: CGFloat = 0
@@ -835,6 +835,18 @@ class ChoicePickerComponent: Component {
 
     // MARK: - Configuration Methods
 
+    /// Builds a dynamic light/dark UIColor with a safe static fallback
+    ///
+    /// Dynamic colors re-resolve against the view's traitCollection, so
+    /// rendered options/title switch automatically on window style change.
+    private static func makeDynamicColor(light: String, dark: String) -> UIColor {
+        if let dynamic = ComponentStyleConfigManager.parseDynamicColor(light: light, dark: dark) {
+            return dynamic
+        }
+        Logger.shared.error("ChoicePicker makeDynamicColor: parse failed light=\(light) dark=\(dark), fallback to light color")
+        return ComponentStyleConfigManager.parseColorToUIColor(light) ?? .black
+    }
+
     /// Load local style configuration
     private func loadLocalStyleConfig() {
         guard let pickerConfig = ComponentStyleConfigManager.shared.getConfig(for: componentType) else {
@@ -887,9 +899,9 @@ class ChoicePickerComponent: Component {
             self.textMargin = value
         }
 
-        if let color = pickerConfig["text-color"] as? String,
-           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
-            self.textColor = value
+        if let color = pickerConfig["text-color"] as? String {
+            let darkColor = pickerConfig["text-color-dark"] as? String ?? color
+            self.textColor = ChoicePickerComponent.makeDynamicColor(light: color, dark: darkColor)
         }
 
         if let size = pickerConfig["text-size"] as? String,
@@ -904,9 +916,9 @@ class ChoicePickerComponent: Component {
         }
 
         // Parse option row styles
-        if let color = pickerConfig["item-background-color"] as? String,
-           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
-            self.itemBackgroundColor = value
+        if let color = pickerConfig["item-background-color"] as? String {
+            let darkColor = pickerConfig["item-background-color-dark"] as? String ?? color
+            self.itemBackgroundColor = ChoicePickerComponent.makeDynamicColor(light: color, dark: darkColor)
         }
         if let radius = pickerConfig["item-corner-radius"] as? String,
            let value = ComponentStyleConfigManager.parseSize(radius) {
@@ -964,9 +976,9 @@ class ChoicePickerComponent: Component {
             labelFontWeight = ComponentStyleConfigManager.parseFontWeight(weight)
         }
         self.labelFont = UIFont.systemFont(ofSize: labelFontSize, weight: labelFontWeight)
-        if let color = pickerConfig["label-color"] as? String,
-           let value = ComponentStyleConfigManager.parseColorToUIColor(color) {
-            self.labelColor = value
+        if let color = pickerConfig["label-color"] as? String {
+            let darkColor = pickerConfig["label-color-dark"] as? String ?? color
+            self.labelColor = ChoicePickerComponent.makeDynamicColor(light: color, dark: darkColor)
         }
         if let margin = pickerConfig["label-margin-bottom"] as? String,
            let value = ComponentStyleConfigManager.parseSize(margin) {
