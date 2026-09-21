@@ -109,6 +109,7 @@ internal class ComponentStyleConfigManager {
             "label-font-weight": "medium",
             "label-color": "#1F2937",
             "label-color-dark": "#FFFFFFE6",
+            "label-margin-top": "12px",
             "label-margin-bottom": "16px",
             "choice-gap": "16px",
             "disabled-opacity": "1",

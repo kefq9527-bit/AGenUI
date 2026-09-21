@@ -320,6 +320,7 @@ class ChoicePickerComponent: Component {
     private var textSize: CGFloat = 16
     private var labelFont: UIFont = .systemFont(ofSize: 14, weight: .medium)
     private var labelColor: UIColor = ChoicePickerComponent.makeDynamicColor(light: "#1F2937", dark: "#FFFFFFE6")
+    private var labelMarginTop: CGFloat = 6  // titleLabel 顶部与上方视图 bottom 的间距，设计口径默认 6pt
     private var labelMarginBottom: CGFloat = 8
     private var choiceGap: CGFloat = 4  // Gap between options
     private var itemBackgroundColor: UIColor = ChoicePickerComponent.makeDynamicColor(light: "#F5F6F8", dark: "#333333")
@@ -444,6 +445,7 @@ class ChoicePickerComponent: Component {
         var paddingHorizontal: CGFloat = 0
         var labelFontSize: CGFloat = 14
         var labelFontWeight: UIFont.Weight = .medium
+        var labelMarginTop: CGFloat = 6
         var labelMarginBottom: CGFloat = 8
 
         if let pickerConfig = ComponentStyleConfigManager.shared.getConfig(for: "ChoicePicker") {
@@ -477,6 +479,10 @@ class ChoicePickerComponent: Component {
             }
             if let weight = pickerConfig["label-font-weight"] as? String {
                 labelFontWeight = ComponentStyleConfigManager.parseFontWeight(weight)
+            }
+            if let margin = pickerConfig["label-margin-top"] as? String,
+               let value = ComponentStyleConfigManager.parseSize(margin) {
+                labelMarginTop = value
             }
             if let margin = pickerConfig["label-margin-bottom"] as? String,
                let value = ComponentStyleConfigManager.parseSize(margin) {
@@ -540,7 +546,7 @@ class ChoicePickerComponent: Component {
         let titleText = labelText(from: json["label"])
         if !titleText.isEmpty {
             let titleFont = UIFont.systemFont(ofSize: labelFontSize, weight: labelFontWeight)
-            totalHeight += labelBlockHeight(titleText, width: constraintWidth, font: titleFont, marginBottom: labelMarginBottom)
+            totalHeight += labelBlockHeight(titleText, width: constraintWidth, font: titleFont, marginTop: labelMarginTop, marginBottom: labelMarginBottom)
         }
 
         // Search input adds height when filterable is on (margin top + height + margin bottom)
@@ -576,8 +582,8 @@ class ChoicePickerComponent: Component {
 
         // 0. Title label at the very top (component-level `label`)
         if let titleLabel = titleLabel, !titleLabel.isHidden, let text = titleLabel.text, !text.isEmpty {
-            let block = Self.labelBlockHeight(text, width: boundsWidth, font: labelFont, marginBottom: labelMarginBottom)
-            titleLabel.frame = CGRect(x: 0, y: 0, width: boundsWidth, height: max(0, block - labelMarginBottom))
+            let block = Self.labelBlockHeight(text, width: boundsWidth, font: labelFont, marginTop: labelMarginTop, marginBottom: labelMarginBottom)
+            titleLabel.frame = CGRect(x: 0, y: labelMarginTop, width: boundsWidth, height: max(0, block - labelMarginTop - labelMarginBottom))
             currentY = block
         }
 
@@ -980,6 +986,10 @@ class ChoicePickerComponent: Component {
             let darkColor = pickerConfig["label-color-dark"] as? String ?? color
             self.labelColor = ChoicePickerComponent.makeDynamicColor(light: color, dark: darkColor)
         }
+        if let margin = pickerConfig["label-margin-top"] as? String,
+           let value = ComponentStyleConfigManager.parseSize(margin) {
+            self.labelMarginTop = value
+        }
         if let margin = pickerConfig["label-margin-bottom"] as? String,
            let value = ComponentStyleConfigManager.parseSize(margin) {
             self.labelMarginBottom = value
@@ -1296,16 +1306,16 @@ class ChoicePickerComponent: Component {
         return String(describing: value)
     }
 
-    /// Compute the title block height (text height + bottom margin) for a label.
+    /// Compute the title block height (top margin + text height + bottom margin) for a label.
     /// Shared by `measure` and `layoutSubviews` so the reserved height always equals the laid-out height.
-    private static func labelBlockHeight(_ text: String, width: CGFloat, font: UIFont, marginBottom: CGFloat) -> CGFloat {
+    private static func labelBlockHeight(_ text: String, width: CGFloat, font: UIFont, marginTop: CGFloat, marginBottom: CGFloat) -> CGFloat {
         guard !text.isEmpty, width > 0 else { return 0 }
         let attributed = NSAttributedString(string: text, attributes: [.font: font])
         let rect = attributed.boundingRect(
             with: CGSize(width: width, height: .greatestFiniteMagnitude),
             options: [.usesLineFragmentOrigin, .usesFontLeading],
             context: nil)
-        return ceil(rect.height) + marginBottom
+        return marginTop + ceil(rect.height) + marginBottom
     }
 
     // MARK: - Private Methods - Error Display
