@@ -300,6 +300,7 @@ class CheckBoxButton: UIControl {
                 let config = UIImage.SymbolConfiguration(pointSize: iconSize, weight: .semibold)
                 checkMarkImageView.image = UIImage(systemName: "checkmark", withConfiguration: config)
                 checkMarkImageView.isHidden = false
+                checkBoxView.layer.borderColor = disabledSelectedBackgroundColor.cgColor
             } else {
                 checkMarkImageView.image = nil
                 checkMarkImageView.isHidden = true

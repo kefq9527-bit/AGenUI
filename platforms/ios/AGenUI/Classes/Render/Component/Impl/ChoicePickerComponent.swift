@@ -33,7 +33,7 @@ private class ChipButton: UIButton {
 
     // Disabled colors (defaults aligned with ChoicePicker config)
     var disabledBackgroundColor: UIColor = .clear
-    var disabledBorderColor: UIColor = UIColor(red: 0xDC/255.0, green: 0xE0/255.0, blue: 0xE6/255.0, alpha: 1.0)
+    var disabledBorderColor: UIColor = UIColor(red: 0x8C/255.0, green: 0xC5/255.0, blue: 0xF8/255.0, alpha: 1.0)
     var disabledTextColor: UIColor = UIColor(red: 0xC0/255.0, green: 0xC4/255.0, blue: 0xCC/255.0, alpha: 1.0)
     var disabledSelectedBackgroundColor: UIColor = UIColor(red: 0x8C/255.0, green: 0xC5/255.0, blue: 0xF8/255.0, alpha: 1.0)
     var disabledSelectedTextColor: UIColor = .white
@@ -329,7 +329,7 @@ class ChoicePickerComponent: Component {
     private var itemPaddingVertical: CGFloat = 0
     private var textColorDisabled: UIColor = UIColor.black.withAlphaComponent(0.4)
     private var disabledBackgroundColor: UIColor = UIColor(red: 0xEB/255.0, green: 0xEB/255.0, blue: 0xEB/255.0, alpha: 1.0)
-    private var disabledBorderColor: UIColor = UIColor.black.withAlphaComponent(0.1)
+    private var disabledBorderColor: UIColor = UIColor(red: 0x8C/255.0, green: 0xC5/255.0, blue: 0xF8/255.0, alpha: 1.0)
     private var disabledSelectedBackgroundColor: UIColor = UIColor(red: 0xEB/255.0, green: 0xEB/255.0, blue: 0xEB/255.0, alpha: 1.0)
     private var exclusiveBorderRadius: CGFloat? = nil
     private var disabledOpacity: CGFloat = 0.5
