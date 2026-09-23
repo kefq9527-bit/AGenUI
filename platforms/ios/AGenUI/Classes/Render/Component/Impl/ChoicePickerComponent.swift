@@ -19,13 +19,13 @@ private class ChipButton: UIButton {
     var value: String = ""
 
     // Style configuration
-    var cornerRadius: CGFloat = 16
+    var cornerRadius: CGFloat = 12
     var borderWidth: CGFloat = 1.0
     var paddingHorizontal: CGFloat = 16
     var paddingVertical: CGFloat = 8
 
     // Colors
-    var selectedBackgroundColor: UIColor = UIColor(red: 0x2E/255.0, green: 0x82/255.0, blue: 0xFF/255.0, alpha: 1.0)
+    var selectedBackgroundColor: UIColor = UIColor(red: 0x24/255.0, green: 0x96/255.0, blue: 0xFF/255.0, alpha: 1.0)
     var selectedTextColor: UIColor = .white
     var unselectedBackgroundColor: UIColor = .clear
     var unselectedBorderColor: UIColor = UIColor.black.withAlphaComponent(0.1)
@@ -311,18 +311,18 @@ class ChoicePickerComponent: Component {
     private var checkboxSize: CGFloat = 16
     private var checkboxBorderWidth: CGFloat = 1.5
     private var checkboxBorderRadius: CGFloat = 6
-    private var selectedBackgroundColor: UIColor = UIColor(red: 0x2E/255.0, green: 0x82/255.0, blue: 0xFF/255.0, alpha: 1.0)
-    private var selectedBorderColor: UIColor = UIColor(red: 0x2E/255.0, green: 0x82/255.0, blue: 0xFF/255.0, alpha: 1.0)
+    private var selectedBackgroundColor: UIColor = UIColor(red: 0x24/255.0, green: 0x96/255.0, blue: 0xFF/255.0, alpha: 1.0)
+    private var selectedBorderColor: UIColor = UIColor(red: 0x24/255.0, green: 0x96/255.0, blue: 0xFF/255.0, alpha: 1.0)
     private var unselectedBackgroundColor: UIColor = .clear
     private var unselectedBorderColor: UIColor = UIColor.black.withAlphaComponent(0.1)
     private var textMargin: CGFloat = 8
     private var textColor: UIColor = ChoicePickerComponent.makeDynamicColor(light: "#191919", dark: "#DADADA")
     private var textSize: CGFloat = 16
-    private var labelFont: UIFont = .systemFont(ofSize: 14, weight: .medium)
+    private var labelFont: UIFont = .systemFont(ofSize: 16, weight: .medium)
     private var labelColor: UIColor = ChoicePickerComponent.makeDynamicColor(light: "#1F2937", dark: "#FFFFFFE6")
     private var labelMarginTop: CGFloat = 6  // titleLabel 顶部与上方视图 bottom 的间距，设计口径默认 6pt
     private var labelMarginBottom: CGFloat = 8
-    private var choiceGap: CGFloat = 4  // Gap between options
+    private var choiceGap: CGFloat = 2  // Gap between options
     private var itemBackgroundColor: UIColor = ChoicePickerComponent.makeDynamicColor(light: "#F5F6F8", dark: "#333333")
     private var itemCornerRadius: CGFloat = 0
     private var itemPaddingHorizontal: CGFloat = 0
@@ -1113,7 +1113,7 @@ class ChoicePickerComponent: Component {
             chipButton.tag = index
 
             // Apply chip style configuration (defaults match diff)
-            chipButton.cornerRadius = 16
+            chipButton.cornerRadius = 12
             chipButton.borderWidth = 1.0
             chipButton.paddingHorizontal = 16
             chipButton.paddingVertical = 8
